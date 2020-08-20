@@ -1,0 +1,3602 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Hybrid Public Key Encryption</title>
+<meta content="Richard L. Barnes" name="author">
+<meta content="Karthik Bhargavan" name="author">
+<meta content="
+       This document describes a scheme for hybrid public-key encryption
+(HPKE).  This scheme provides authenticated public key encryption of
+arbitrary-sized plaintexts for a recipient public key. HPKE works
+for any combination of an asymmetric key encapsulation mechanism
+(KEM), key derivation function (KDF), and authenticated encryption
+with additional data (AEAD) encryption function. We provide
+instantiations of the scheme using widely-used and efficient
+primitives. 
+    " name="description">
+<meta content="xml2rfc 2.40.1" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="draft-irtf-cfrg-hpke-latest" name="ietf.draft">
+<link href="draft-irtf-cfrg-hpke.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@import url('https://martinthomson.github.io/i-d-template/fonts.css');
+
+html {
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --small-font-size: 14.5px;
+}
+body {
+  max-width: 624px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+#title {
+  padding: 1em 0 0.2em;
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 26px;
+}
+h4, h5, h6 {
+  font-size: 18px;
+  line-height: 22px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p, #abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 18px;
+  line-height: 24px;
+}
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href].selfRef {
+  color: var(--text-color);
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px 'Oxygen Mono', monospace;
+}
+pre {
+  border: 1px solid var(--line-color);
+  line-height: 17px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  pre {
+    display: inline-block;
+    overflow-x: auto;
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  pre + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+  table {
+    display: inline-block;
+    overflow-x: auto;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #eee;
+}
+tr:nth-child(2n) > td {
+  background-color: var(--background-color);
+}
+tr:nth-child(2n+1) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody tr:nth-child(2n) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody tr:nth-child(2n+1) > td {
+  background-color: var(--background-color);
+}
+table caption {
+  font-style: italic;
+  margin: 0.3em 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  visibility: hidden;
+  user-select: none;
+}
+a.pilcrow[href] { color: #ddd; }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media screen {
+  :hover > a.pilcrow {
+    visibility: visible;
+  }
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 8em;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  margin: 0;
+  clear: left;
+  float: left;
+  text-align: right;
+}
+#identifiers dd {
+  margin: 0 0 0 calc(1em + var(--identifier-width));
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 600px) {
+  .index ul {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  .index ul ul {
+    column-count: 1;
+    column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 600px) {
+  #authors-addresses {
+    display: relative;
+    padding: 32px 0 0;
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #name-authors-addresses {
+    position: absolute;
+    top: 0px;
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+  }
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #b76427;
+  background-color: rgba(249, 232, 105, 0.3);
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: rgba(249, 232, 105, 0.3);
+  border-radius: 3px;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 953px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.9; /* TODO fix when Henrik takes the patch. */
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 954px) {
+  body {
+    padding-right: 380px;
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul p, #toc ul li {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table td.text-left,
+table th.text-left {
+  text-align: left;
+}
+table td.text-center,
+table th.text-center {
+  text-align: center;
+}
+table td.text-right,
+table th.text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  dd {
+    page-break-before: avoid;
+  }
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<script src="metadata.min.js"></script>
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">HPKE</td>
+<td class="right">February 2020</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Barnes &amp; Bhargavan</td>
+<td class="center">Expires 31 August 2020</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Network Working Group</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-irtf-cfrg-hpke-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2020-02-28" class="published">28 February 2020</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2020-08-31">31 August 2020</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">R.L. Barnes</div>
+<div class="org">Cisco</div>
+</div>
+<div class="author">
+      <div class="author-name">K. Bhargavan</div>
+<div class="org">Inria</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Hybrid Public Key Encryption</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document describes a scheme for hybrid public-key encryption
+(HPKE).  This scheme provides authenticated public key encryption of
+arbitrary-sized plaintexts for a recipient public key. HPKE works
+for any combination of an asymmetric key encapsulation mechanism
+(KEM), key derivation function (KDF), and authenticated encryption
+with additional data (AEAD) encryption function. We provide
+instantiations of the scheme using widely-used and efficient
+primitives.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 31 August 2020.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2020 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Simplified BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Simplified BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a><a href="#section-toc.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-requirements-notation" class="xref">Requirements Notation</a><a href="#section-toc.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-notation" class="xref">Notation</a><a href="#section-toc.1-1.3.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-cryptographic-dependencies" class="xref">Cryptographic Dependencies</a><a href="#section-toc.1-1.4.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-dh-based-kem" class="xref">DH-Based KEM</a><a href="#section-toc.1-1.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-hybrid-public-key-encryptio" class="xref">Hybrid Public Key Encryption</a><a href="#section-toc.1-1.5.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-creating-the-encryption-con" class="xref">Creating the Encryption Context</a><a href="#section-toc.1-1.5.2.1.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.1.2.1">
+                    <p id="section-toc.1-1.5.2.1.2.1.1"><a href="#section-5.1.1" class="xref">5.1.1</a>.  <a href="#name-encryption-to-a-public-key" class="xref">Encryption to a Public Key</a><a href="#section-toc.1-1.5.2.1.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.1.2.2">
+                    <p id="section-toc.1-1.5.2.1.2.2.1"><a href="#section-5.1.2" class="xref">5.1.2</a>.  <a href="#name-authentication-using-a-pre-" class="xref">Authentication using a Pre-Shared Key</a><a href="#section-toc.1-1.5.2.1.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.1.2.3">
+                    <p id="section-toc.1-1.5.2.1.2.3.1"><a href="#section-5.1.3" class="xref">5.1.3</a>.  <a href="#name-authentication-using-an-asy" class="xref">Authentication using an Asymmetric Key</a><a href="#section-toc.1-1.5.2.1.2.3.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.1.2.4">
+                    <p id="section-toc.1-1.5.2.1.2.4.1"><a href="#section-5.1.4" class="xref">5.1.4</a>.  <a href="#name-authentication-using-both-a" class="xref">Authentication using both a PSK and an Asymmetric Key</a><a href="#section-toc.1-1.5.2.1.2.4.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-encryption-and-decryption" class="xref">Encryption and Decryption</a><a href="#section-toc.1-1.5.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.3">
+                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="xref">5.3</a>.  <a href="#name-secret-export" class="xref">Secret Export</a><a href="#section-toc.1-1.5.2.3.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-single-shot-apis" class="xref">Single-Shot APIs</a><a href="#section-toc.1-1.6.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-algorithm-identifiers" class="xref">Algorithm Identifiers</a><a href="#section-toc.1-1.7.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="xref">7.1</a>.  <a href="#name-key-encapsulation-mechanism" class="xref">Key Encapsulation Mechanisms (KEMs)</a><a href="#section-toc.1-1.7.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="xref">7.2</a>.  <a href="#name-key-derivation-functions-kd" class="xref">Key Derivation Functions (KDFs)</a><a href="#section-toc.1-1.7.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="xref">7.3</a>.  <a href="#name-authenticated-encryption-wi" class="xref">Authenticated Encryption with Associated Data (AEAD) Functions</a><a href="#section-toc.1-1.7.2.3.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a><a href="#section-toc.1-1.8.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-security-properties" class="xref">Security Properties</a><a href="#section-toc.1-1.8.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-domain-separation" class="xref">Domain Separation</a><a href="#section-toc.1-1.8.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.8.2.3">
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="xref">8.3</a>.  <a href="#name-external-requirements-non-g" class="xref">External Requirements / Non-Goals</a><a href="#section-toc.1-1.8.2.3.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.8.2.4">
+                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="xref">8.4</a>.  <a href="#name-metadata-protection" class="xref">Metadata Protection</a><a href="#section-toc.1-1.8.2.4.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.8.2.5">
+                <p id="section-toc.1-1.8.2.5.1"><a href="#section-8.5" class="xref">8.5</a>.  <a href="#name-designated-verifier-signatu" class="xref">Designated-Verifier Signature</a><a href="#section-toc.1-1.8.2.5.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref">9</a>.  <a href="#name-message-encoding" class="xref">Message Encoding</a><a href="#section-toc.1-1.9.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="xref">10</a>. <a href="#name-iana-considerations" class="xref">IANA Considerations</a><a href="#section-toc.1-1.10.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.10.2.1">
+                <p id="section-toc.1-1.10.2.1.1"><a href="#section-10.1" class="xref">10.1</a>.  <a href="#name-kem-identifiers" class="xref">KEM Identifiers</a><a href="#section-toc.1-1.10.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.10.2.2">
+                <p id="section-toc.1-1.10.2.2.1"><a href="#section-10.2" class="xref">10.2</a>.  <a href="#name-kdf-identifiers" class="xref">KDF Identifiers</a><a href="#section-toc.1-1.10.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.10.2.3">
+                <p id="section-toc.1-1.10.2.3.1"><a href="#section-10.3" class="xref">10.3</a>.  <a href="#name-aead-identifiers" class="xref">AEAD Identifiers</a><a href="#section-toc.1-1.10.2.3.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="xref">11</a>. <a href="#name-references" class="xref">References</a><a href="#section-toc.1-1.11.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="xref">11.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a><a href="#section-toc.1-1.11.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="xref">11.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a><a href="#section-toc.1-1.11.2.2.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#section-appendix.a" class="xref">Appendix A</a>.  <a href="#name-test-vectors" class="xref">Test Vectors</a><a href="#section-toc.1-1.12.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.1">
+                <p id="section-toc.1-1.12.2.1.1"><a href="#section-a.1" class="xref">A.1</a>.  <a href="#name-dhkemcurve25519-hkdf-sha256" class="xref">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a><a href="#section-toc.1-1.12.2.1.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.1.2.1">
+                    <p id="section-toc.1-1.12.2.1.2.1.1"><a href="#section-a.1.1" class="xref">A.1.1</a>.  <a href="#name-authpsk-setup-information" class="xref">AuthPSK Setup Information</a><a href="#section-toc.1-1.12.2.1.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.2">
+                <p id="section-toc.1-1.12.2.2.1"><a href="#section-a.2" class="xref">A.2</a>.  <a href="#name-dhkemcurve25519-hkdf-sha256-" class="xref">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a><a href="#section-toc.1-1.12.2.2.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.2.2.1">
+                    <p id="section-toc.1-1.12.2.2.2.1.1"><a href="#section-a.2.1" class="xref">A.2.1</a>.  <a href="#name-base-setup-information" class="xref">Base Setup Information</a><a href="#section-toc.1-1.12.2.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.3">
+                <p id="section-toc.1-1.12.2.3.1"><a href="#section-a.3" class="xref">A.3</a>.  <a href="#name-dhkemcurve25519-hkdf-sha256-a" class="xref">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a><a href="#section-toc.1-1.12.2.3.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.3.2.1">
+                    <p id="section-toc.1-1.12.2.3.2.1.1"><a href="#section-a.3.1" class="xref">A.3.1</a>.  <a href="#name-psk-setup-information" class="xref">PSK Setup Information</a><a href="#section-toc.1-1.12.2.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.4">
+                <p id="section-toc.1-1.12.2.4.1"><a href="#section-a.4" class="xref">A.4</a>.  <a href="#name-dhkemcurve25519-hkdf-sha256-ae" class="xref">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a><a href="#section-toc.1-1.12.2.4.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.4.2.1">
+                    <p id="section-toc.1-1.12.2.4.2.1.1"><a href="#section-a.4.1" class="xref">A.4.1</a>.  <a href="#name-auth-setup-information" class="xref">Auth Setup Information</a><a href="#section-toc.1-1.12.2.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.5">
+                <p id="section-toc.1-1.12.2.5.1"><a href="#section-a.5" class="xref">A.5</a>.  <a href="#name-dhkemp-256-hkdf-sha256-chac" class="xref">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a><a href="#section-toc.1-1.12.2.5.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.5.2.1">
+                    <p id="section-toc.1-1.12.2.5.2.1.1"><a href="#section-a.5.1" class="xref">A.5.1</a>.  <a href="#name-base-setup-information-2" class="xref">Base Setup Information</a><a href="#section-toc.1-1.12.2.5.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.6">
+                <p id="section-toc.1-1.12.2.6.1"><a href="#section-a.6" class="xref">A.6</a>.  <a href="#name-dhkemp-256-hkdf-sha256-chach" class="xref">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a><a href="#section-toc.1-1.12.2.6.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.6.2.1">
+                    <p id="section-toc.1-1.12.2.6.2.1.1"><a href="#section-a.6.1" class="xref">A.6.1</a>.  <a href="#name-psk-setup-information-2" class="xref">PSK Setup Information</a><a href="#section-toc.1-1.12.2.6.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.7">
+                <p id="section-toc.1-1.12.2.7.1"><a href="#section-a.7" class="xref">A.7</a>.  <a href="#name-dhkemp-256-hkdf-sha256-chacha" class="xref">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a><a href="#section-toc.1-1.12.2.7.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.7.2.1">
+                    <p id="section-toc.1-1.12.2.7.2.1.1"><a href="#section-a.7.1" class="xref">A.7.1</a>.  <a href="#name-auth-setup-information-2" class="xref">Auth Setup Information</a><a href="#section-toc.1-1.12.2.7.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.8">
+                <p id="section-toc.1-1.12.2.8.1"><a href="#section-a.8" class="xref">A.8</a>.  <a href="#name-dhkemp-256-hkdf-sha256-chacha2" class="xref">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a><a href="#section-toc.1-1.12.2.8.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.8.2.1">
+                    <p id="section-toc.1-1.12.2.8.2.1.1"><a href="#section-a.8.1" class="xref">A.8.1</a>.  <a href="#name-authpsk-setup-information-2" class="xref">AuthPSK Setup Information</a><a href="#section-toc.1-1.12.2.8.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.9">
+                <p id="section-toc.1-1.12.2.9.1"><a href="#section-a.9" class="xref">A.9</a>.  <a href="#name-dhkemp-521-hkdf-sha512-aes-" class="xref">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a><a href="#section-toc.1-1.12.2.9.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.9.2.1">
+                    <p id="section-toc.1-1.12.2.9.2.1.1"><a href="#section-a.9.1" class="xref">A.9.1</a>.  <a href="#name-base-setup-information-3" class="xref">Base Setup Information</a><a href="#section-toc.1-1.12.2.9.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.10">
+                <p id="section-toc.1-1.12.2.10.1"><a href="#section-a.10" class="xref">A.10</a>. <a href="#name-dhkemp-521-hkdf-sha512-aes-g" class="xref">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a><a href="#section-toc.1-1.12.2.10.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.10.2.1">
+                    <p id="section-toc.1-1.12.2.10.2.1.1"><a href="#section-a.10.1" class="xref">A.10.1</a>.  <a href="#name-psk-setup-information-3" class="xref">PSK Setup Information</a><a href="#section-toc.1-1.12.2.10.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.11">
+                <p id="section-toc.1-1.12.2.11.1"><a href="#section-a.11" class="xref">A.11</a>. <a href="#name-dhkemp-521-hkdf-sha512-aes-gc" class="xref">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a><a href="#section-toc.1-1.12.2.11.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.11.2.1">
+                    <p id="section-toc.1-1.12.2.11.2.1.1"><a href="#section-a.11.1" class="xref">A.11.1</a>.  <a href="#name-auth-setup-information-3" class="xref">Auth Setup Information</a><a href="#section-toc.1-1.12.2.11.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.12">
+                <p id="section-toc.1-1.12.2.12.1"><a href="#section-a.12" class="xref">A.12</a>. <a href="#name-dhkemp-521-hkdf-sha512-aes-gcm" class="xref">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a><a href="#section-toc.1-1.12.2.12.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.12.2.12.2.1">
+                    <p id="section-toc.1-1.12.2.12.2.1.1"><a href="#section-a.12.1" class="xref">A.12.1</a>.  <a href="#name-authpsk-setup-information-3" class="xref">AuthPSK Setup Information</a><a href="#section-toc.1-1.12.2.12.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#section-appendix.b" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a><a href="#section-toc.1-1.13.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">"Hybrid" public-key encryption schemes (HPKE) that combine
+asymmetric and symmetric algorithms are a substantially more
+efficient solution than traditional public key encryption techniques
+such as those based on RSA or ElGamal.  Encrypted messages convey an encryption
+key encapsulated with a public-key scheme, along with one or more ciphertexts
+encrypted using that key.  This type of public key encryption has many
+applications in practice, for example:<a href="#section-1-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-1-2.1">PGP <span>[<a href="#RFC6637" class="xref">RFC6637</a>]</span><a href="#section-1-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-1-2.2">Messaging Layer Security <span>[<a href="#I-D.ietf-mls-protocol" class="xref">I-D.ietf-mls-protocol</a>]</span><a href="#section-1-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-1-2.3">Encrypted Server Name Indication <span>[<a href="#I-D.ietf-tls-esni" class="xref">I-D.ietf-tls-esni</a>]</span><a href="#section-1-2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-1-2.4">Protection of 5G subscriber identities <span>[<a href="#fiveG" class="xref">fiveG</a>]</span><a href="#section-1-2.4" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-1-3">Currently, there are numerous competing and non-interoperable standards and
+variants for hybrid encryption, mostly based on ECIES, including ANSI X9.63
+(ECIES) <span>[<a href="#ANSI" class="xref">ANSI</a>]</span>, IEEE 1363a <span>[<a href="#IEEE" class="xref">IEEE</a>]</span>, ISO/IEC 18033-2 <span>[<a href="#ISO" class="xref">ISO</a>]</span>, and SECG SEC 1
+<span>[<a href="#SECG" class="xref">SECG</a>]</span>.  See <span>[<a href="#MAEA10" class="xref">MAEA10</a>]</span> for a thorough comparison.  All of these existing
+schemes have problems, e.g., because they rely on outdated primitives, lack
+proofs of IND-CCA2 security, or fail to provide test vectors.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">This document defines an HPKE scheme that provides a subset
+of the functions provided by the collection of schemes above, but
+specified with sufficient clarity that they can be interoperably
+implemented and formally verified. It is secure against (adaptive)
+chosen ciphertext attacks (IND-CCA2 secure) under classical assumptions
+about the underlying primitives <span>[<a href="#HPKEAnalysis" class="xref">HPKEAnalysis</a>]</span>. A summary of this
+analysis is in <a href="#sec-properties" class="xref">Section 8.1</a>.<a href="#section-1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="requirements-notation">
+<section id="section-2">
+      <h2 id="name-requirements-notation">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-requirements-notation" class="section-name selfRef">Requirements Notation</a>
+      </h2>
+<p id="section-2-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+"OPTIONAL" in this document are to be interpreted as described in
+BCP14 <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="xref">RFC8174</a>]</span>  when, and only when, they appear in
+all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="notation">
+<section id="section-3">
+      <h2 id="name-notation">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-notation" class="section-name selfRef">Notation</a>
+      </h2>
+<p id="section-3-1">The following terms are used throughout this document to describe the
+operations, roles, and behaviors of HPKE:<a href="#section-3-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3-2.1">Sender (S): Entity which sends an encrypted message.<a href="#section-3-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.2">Recipient (R): Entity which receives an encrypted message.<a href="#section-3-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.3">Ephemeral (E): A fresh random value meant for one-time use.<a href="#section-3-2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.4">
+          <code>(skX, pkX)</code>: A KEM key pair used in role X; <code>skX</code> is the private
+key and <code>pkX</code> is the public key<a href="#section-3-2.4" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.5">
+          <code>pk(skX)</code>: The public key corresponding to private key <code>skX</code><a href="#section-3-2.5" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.6">
+          <code>len(x)</code>: The length of the byte string <code>x</code>, expressed as a
+two-byte unsigned integer in network (big-endian) byte order<a href="#section-3-2.6" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.7">
+          <code>encode_big_endian(x, n)</code>: An byte string encoding the integer
+value <code>x</code> as an n-byte big-endian value<a href="#section-3-2.7" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.8">
+          <code>concat(x0, ..., xN)</code>: Concatenation of byte strings.
+<code>concat(0x01, 0x0203, 0x040506) = 0x010203040506</code><a href="#section-3-2.8" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.9">
+          <code>zero(n)</code>: An all-zero byte string of length <code>n</code>. <code>zero(4) =
+0x00000000</code><a href="#section-3-2.9" class="pilcrow">¶</a>
+</li>
+<li id="section-3-2.10">
+          <code>xor(a,b)</code>: XOR of byte strings; <code>xor(0xF0F0, 0x1234) = 0xE2C4</code>.
+It is an error to call this function with two arguments of unequal
+length.<a href="#section-3-2.10" class="pilcrow">¶</a>
+</li>
+</ul>
+</section>
+</div>
+<div id="cryptographic-dependencies">
+<section id="section-4">
+      <h2 id="name-cryptographic-dependencies">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-cryptographic-dependencies" class="section-name selfRef">Cryptographic Dependencies</a>
+      </h2>
+<p id="section-4-1">HPKE variants rely on the following primitives:<a href="#section-4-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4-2.1">
+          <p id="section-4-2.1.1">A Key Encapsulation Mechanism (KEM):<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4-2.1.2.1">GenerateKeyPair(): Generate a key pair (sk, pk)<a href="#section-4-2.1.2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.2">Marshal(pk): Produce a fixed-length byte string encoding the
+public key <code>pk</code><a href="#section-4-2.1.2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.3">Unmarshal(enc): Parse a fixed-length byte string to recover a
+public key<a href="#section-4-2.1.2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.4">Encap(pk): Generate an ephemeral, fixed-length symmetric key and
+a fixed-length encapsulation of that key that can be decapsulated
+by the holder of the private key corresponding to pk<a href="#section-4-2.1.2.4" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.5">Decap(enc, sk): Use the private key <code>sk</code> to recover the ephemeral
+symmetric key from its encapsulated representation <code>enc</code><a href="#section-4-2.1.2.5" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.6">AuthEncap(pkR, skS) (optional): Same as Encap(), but the outputs
+encode an assurance that the ephemeral shared key is known only
+to the holder of the private key <code>skS</code><a href="#section-4-2.1.2.6" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.7">AuthDecap(skR, pkS) (optional): Same as Decap(), but the holder
+of the private key <code>skR</code> is assured that the ephemeral shared
+key is known only to the holder of the private key corresponding
+to <code>pkS</code><a href="#section-4-2.1.2.7" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.8">Nenc: The length in bytes of an encapsulated key from this KEM<a href="#section-4-2.1.2.8" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.1.2.9">Npk: The length in bytes of an encoded public key for this KEM<a href="#section-4-2.1.2.9" class="pilcrow">¶</a>
+</li>
+</ul>
+</li>
+<li id="section-4-2.2">
+          <p id="section-4-2.2.1">A Key Derivation Function:<a href="#section-4-2.2.1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4-2.2.2.1">Hash(m): Compute the cryptographic hash of input message <code>m</code><a href="#section-4-2.2.2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.2.2.2">Extract(salt, IKM): Extract a pseudorandom key of fixed length
+from input keying material <code>IKM</code> and an optional byte string
+<code>salt</code><a href="#section-4-2.2.2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.2.2.3">Expand(PRK, info, L): Expand a pseudorandom key <code>PRK</code> using
+optional string <code>info</code> into <code>L</code> bytes of output keying material<a href="#section-4-2.2.2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.2.2.4">Nh: The output size of the Hash and Extract functions in octets<a href="#section-4-2.2.2.4" class="pilcrow">¶</a>
+</li>
+</ul>
+</li>
+<li id="section-4-2.3">
+          <p id="section-4-2.3.1">An AEAD encryption algorithm <span>[<a href="#RFC5116" class="xref">RFC5116</a>]</span>:<a href="#section-4-2.3.1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4-2.3.2.1">Seal(key, nonce, aad, pt): Encrypt and authenticate plaintext
+<code>pt</code> with associated data <code>aad</code> using secret key <code>key</code> and nonce
+<code>nonce</code>, yielding ciphertext and tag <code>ct</code><a href="#section-4-2.3.2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.3.2.2">Open(key, nonce, aad, ct): Decrypt ciphertext <code>ct</code> using
+associated data <code>aad</code> with secret key <code>key</code> and nonce <code>nonce</code>,
+returning plaintext message <code>pt</code> or the error value <code>OpenError</code><a href="#section-4-2.3.2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.3.2.3">Nk: The length in bytes of a key for this algorithm<a href="#section-4-2.3.2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-4-2.3.2.4">Nn: The length in bytes of a nonce for this algorithm<a href="#section-4-2.3.2.4" class="pilcrow">¶</a>
+</li>
+</ul>
+</li>
+</ul>
+<p id="section-4-3">A set of algorithm identifiers for concrete instantiations of these
+primitives is provided in <a href="#ciphersuites" class="xref">Section 7</a>.  Algorithm identifier
+values are two bytes long.<a href="#section-4-3" class="pilcrow">¶</a></p>
+<div id="dh-based-kem">
+<section id="section-4.1">
+        <h3 id="name-dh-based-kem">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-dh-based-kem" class="section-name selfRef">DH-Based KEM</a>
+        </h3>
+<p id="section-4.1-1">Suppose we are given a Diffie-Hellman group that provides the
+following operations:<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4.1-2.1">GenerateKeyPair(): Generate an ephemeral key pair <code>(sk, pk)</code>
+for the DH group in use<a href="#section-4.1-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-4.1-2.2">DH(sk, pk): Perform a non-interactive DH exchange using the
+private key sk and public key pk to produce a shared secret
+of length Npk<a href="#section-4.1-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-4.1-2.3">Marshal(pk): Produce a fixed-length byte string
+encoding the public key <code>pk</code><a href="#section-4.1-2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-4.1-2.4">Unmarshal(enc): Parse a fixed-length byte string to recover a
+public key<a href="#section-4.1-2.4" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-4.1-3">Then we can construct a KEM (which we'll call "DHKEM") in the
+following way:<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-4.1-4">
+<pre>
+def Encap(pkR):
+  skE, pkE = GenerateKeyPair()
+  zz = DH(skE, pkR)
+  enc = Marshal(pkE)
+  return zz, enc
+
+def Decap(enc, skR):
+  pkE = Unmarshal(enc)
+  return DH(skR, pkE)
+
+def AuthEncap(pkR, skS):
+  skE, pkE = GenerateKeyPair()
+  zz = concat(DH(skE, pkR), DH(skS, pkR))
+  enc = Marshal(pkE)
+  return zz, enc
+
+def AuthDecap(enc, skR, pkS):
+  pkE = Unmarshal(enc)
+  return concat(DH(skR, pkE), DH(skR, pkS))
+</pre><a href="#section-4.1-4" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1-5">The GenerateKeyPair, Marshal, and Unmarshal functions are the same
+as for the underlying DH group.  The Marshal functions for the
+curves referenced in {#ciphersuites} are as follows:<a href="#section-4.1-5" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4.1-6.1">P-256: The X-coordinate of the point, encoded as a 32-byte
+big-endian integer<a href="#section-4.1-6.1" class="pilcrow">¶</a>
+</li>
+<li id="section-4.1-6.2">P-521: The X-coordinate of the point, encoded as a 66-byte
+big-endian integer<a href="#section-4.1-6.2" class="pilcrow">¶</a>
+</li>
+<li id="section-4.1-6.3">Curve25519: The standard 32-byte representation of the public key<a href="#section-4.1-6.3" class="pilcrow">¶</a>
+</li>
+<li id="section-4.1-6.4">Curve448: The standard 56-byte representation of the public key<a href="#section-4.1-6.4" class="pilcrow">¶</a>
+</li>
+</ul>
+</section>
+</div>
+</section>
+</div>
+<div id="hybrid-public-key-encryption">
+<section id="section-5">
+      <h2 id="name-hybrid-public-key-encryptio">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-hybrid-public-key-encryptio" class="section-name selfRef">Hybrid Public Key Encryption</a>
+      </h2>
+<p id="section-5-1">In this section, we define a few HPKE variants.  All variants take a
+recipient public key and a sequence of plaintexts <code>pt</code>, and produce an
+encapsulated key <code>enc</code> and a sequence of ciphertexts <code>ct</code>.  These outputs are
+constructed so that only the holder of the private key corresponding
+to <code>pkR</code> can decapsulate the key from <code>enc</code> and decrypt the
+ciphertexts.  All of the algorithms also take an <code>info</code> parameter
+that can be used to influence the generation of keys (e.g., to fold
+in identity information) and an <code>aad</code> parameter that provides
+Additional Authenticated Data to the AEAD algorithm in use.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<p id="section-5-2">In addition to the base case of encrypting to a public key, we
+include two authenticated variants, one of which authenticates
+possession of a pre-shared key, and one of which authenticates
+possession of a KEM private key.  The following one-byte values
+will be used to distinguish between modes:<a href="#section-5-2" class="pilcrow">¶</a></p>
+<table class="center" id="table-1">
+        <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Mode</th>
+            <th class="text-left" rowspan="1" colspan="1">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">mode_base</td>
+            <td class="text-left" rowspan="1" colspan="1">0x00</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">mode_psk</td>
+            <td class="text-left" rowspan="1" colspan="1">0x01</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">mode_auth</td>
+            <td class="text-left" rowspan="1" colspan="1">0x02</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">mode_auth_psk</td>
+            <td class="text-left" rowspan="1" colspan="1">0x03</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-5-4">All of these cases follow the same basic two-step pattern:<a href="#section-5-4" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-5-5">
+        <li id="section-5-5.1">Set up an encryption context that is shared between the sender
+and the recipient<a href="#section-5-5.1" class="pilcrow">¶</a>
+</li>
+<li id="section-5-5.2">Use that context to encrypt or decrypt content<a href="#section-5-5.2" class="pilcrow">¶</a>
+</li>
+</ol>
+<p id="section-5-6">A "context" encodes the AEAD algorithm and key in use, and manages
+the nonces used so that the same nonce is not used with multiple
+plaintexts.<a href="#section-5-6" class="pilcrow">¶</a></p>
+<p id="section-5-7">The constructions described here presume that the relevant non-private
+parameters (<code>enc</code>, <code>pskID</code>, etc.) are transported between the sender and the
+recipient by some application making use of HPKE.<a href="#section-5-7" class="pilcrow">¶</a></p>
+<p id="section-5-8">The procedures described in this session are laid out in a
+Python-like pseudocode.  The algorithms in use are left implicit.<a href="#section-5-8" class="pilcrow">¶</a></p>
+<div id="creating-the-encryption-context">
+<section id="section-5.1">
+        <h3 id="name-creating-the-encryption-con">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-creating-the-encryption-con" class="section-name selfRef">Creating the Encryption Context</a>
+        </h3>
+<p id="section-5.1-1">The variants of HPKE defined in this document share a common
+key schedule that translates the protocol inputs into an encryption
+context. The key schedule inputs are as follows:<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-5.1-2.1">
+            <code>pkR</code> - The recipient's public key<a href="#section-5.1-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1-2.2">
+            <code>zz</code> - A shared secret generated via the KEM for this transaction<a href="#section-5.1-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1-2.3">
+            <code>enc</code> - An encapsulated key produced by the KEM for the recipient<a href="#section-5.1-2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1-2.4">
+            <code>info</code> - Application-supplied information (optional; default value
+"")<a href="#section-5.1-2.4" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1-2.5">
+            <code>psk</code> - A pre-shared secret held by both the sender
+and the recipient (optional; default value <code>zero(Nh)</code>).<a href="#section-5.1-2.5" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1-2.6">
+            <code>pskID</code> - An identifier for the PSK (optional; default
+value <code>"" = zero(0)</code><a href="#section-5.1-2.6" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1-2.7">
+            <code>pkS</code> - The sender's public key (optional; default
+value <code>zero(Npk)</code>)<a href="#section-5.1-2.7" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-5.1-3">Senders and receivers MUST validate public keys for correctness.
+For example, when using a DH-based KEM, the sender should check
+that the receiver's key <code>pkR</code> is valid, i.e., a point on the
+corresponding curve and part of the correct prime-order subgroup.
+Similarly, the receiver should check that the sender's ephemeral
+key <code>pkE</code> is valid. See <a href="#kem-ids" class="xref">Section 7.1</a> for discussion related to other KEMs.<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+<p id="section-5.1-4">The <code>psk</code> and <code>pskID</code> fields MUST appear together or not at all.
+That is, if a non-default value is provided for one of them, then
+the other MUST be set to a non-default value.<a href="#section-5.1-4" class="pilcrow">¶</a></p>
+<p id="section-5.1-5">The key and nonce computed by this algorithm have the property that
+they are only known to the holder of the recipient private key, and
+the party that ran the KEM to generate <code>zz</code> and <code>enc</code>.  If the <code>psk</code>
+and <code>pskID</code> arguments are provided, then the recipient is assured
+that the sender held the PSK.  If the <code>pkSm</code> argument is
+provided, then the recipient is assumed that the sender held the
+corresponding private key (assuming that <code>zz</code> and <code>enc</code> were
+generated using the AuthEncap / AuthDecap methods; see below).<a href="#section-5.1-5" class="pilcrow">¶</a></p>
+<p id="section-5.1-6">The HPKE algorithm identifiers, i.e., the KEM <code>kem_id</code>, KDF <code>kdf_id</code>, and
+AEAD <code>aead_id</code> 2-byte code points, are assumed implicit from the
+implementation and not passed as parameters.<a href="#section-5.1-6" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.1-7">
+<pre>
+default_pkSm = zero(Npk)
+default_psk = zero(Nh)
+default_pskID = zero(0)
+
+def VerifyMode(mode, psk, pskID, pkSm):
+  got_psk = (psk != default_psk and pskID != default_pskID)
+  no_psk = (psk == default_psk and pskID == default_pskID)
+  got_pkSm = (pkSm != default_pkSm)
+  no_pkSm = (pkSm == default_pkSm)
+
+  if mode == mode_base and (got_psk or got_pkSm):
+    raise Exception("Invalid configuration for mode_base")
+  if mode == mode_psk and (no_psk or got_pkSm):
+    raise Exception("Invalid configuration for mode_psk")
+  if mode == mode_auth and (got_psk or no_pkSm):
+    raise Exception("Invalid configuration for mode_auth")
+  if mode == mode_auth_psk and (no_psk or no_pkSm):
+    raise Exception("Invalid configuration for mode_auth_psk")
+
+def KeySchedule(mode, pkR, zz, enc, info, psk, pskID, pkSm):
+  VerifyMode(mode, psk, pskID, pkSm)
+
+  pkRm = Marshal(pkR)
+  identifier = "RFCXXXX"
+  ciphersuite = concat(kem_id, kdf_id, aead_id)
+  pskID_hash = Hash(concat(0x00, pskID))
+  info_hash = Hash(concat(0x01, info))
+  context = concat(identifier, ciphersuite, mode, enc, pkRm,
+                   pkSm, pskID_hash, info_hash)
+
+  secret = Extract(psk, zz)
+  key = Expand(secret, concat("hpke key", context), Nk)
+  nonce = Expand(secret, concat("hpke nonce", context), Nn)
+  exporter_secret = Expand(secret, concat("hpke exp", context), Nh)
+
+  return Context(key, nonce, exporter_secret)
+</pre><a href="#section-5.1-7" class="pilcrow">¶</a>
+</div>
+<p id="section-5.1-8">[[RFC editor: please change "RFCXXXX" to the correct number before
+publication.]]<a href="#section-5.1-8" class="pilcrow">¶</a></p>
+<p id="section-5.1-9">Note that the context construction in the KeySchedule procedure is
+equivalent to serializing a structure of the following form in the
+TLS presentation syntax:<a href="#section-5.1-9" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.1-10">
+<pre>
+struct {
+    // Mode and algorithms
+    uint8 mode;
+    uint16 kem_id;
+    uint16 kdf_id;
+    uint16 aead_id;
+
+    // Public inputs to this key exchange
+    opaque enc[Nenc];
+    opaque pkR[Npk];
+    opaque pkS[Npk];
+
+    // Cryptographic hash of application-supplied pskID
+    opaque pskID_hash[Nh];
+
+    // Cryptographic hash of application-supplied info
+    opaque info_hash[Nh];
+} HPKEContext;
+</pre><a href="#section-5.1-10" class="pilcrow">¶</a>
+</div>
+<div id="hpke-kem">
+<section id="section-5.1.1">
+          <h4 id="name-encryption-to-a-public-key">
+<a href="#section-5.1.1" class="section-number selfRef">5.1.1. </a><a href="#name-encryption-to-a-public-key" class="section-name selfRef">Encryption to a Public Key</a>
+          </h4>
+<p id="section-5.1.1-1">The most basic function of an HPKE scheme is to enable encryption
+for the holder of a given KEM private key.  The <code>SetupBaseS()</code> and
+<code>SetupBaseR()</code> procedures establish contexts that can be used to
+encrypt and decrypt, respectively, for a given private key.<a href="#section-5.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.1-2">The shared secret produced by the KEM is combined via the KDF
+with information describing the key exchange, as well as the
+explicit <code>info</code> parameter provided by the caller.<a href="#section-5.1.1-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.1.1-3">
+<pre>
+def SetupBaseS(pkR, info):
+  zz, enc = Encap(pkR)
+  return enc, KeySchedule(mode_base, pkR, zz, enc, info,
+                          default_psk, default_pskID, default_pkSm)
+
+def SetupBaseR(enc, skR, info):
+  zz = Decap(enc, skR)
+  return KeySchedule(mode_base, pk(skR), zz, enc, info,
+                     default_psk, default_pskID, default_pkSm)
+</pre><a href="#section-5.1.1-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="authentication-using-a-pre-shared-key">
+<section id="section-5.1.2">
+          <h4 id="name-authentication-using-a-pre-">
+<a href="#section-5.1.2" class="section-number selfRef">5.1.2. </a><a href="#name-authentication-using-a-pre-" class="section-name selfRef">Authentication using a Pre-Shared Key</a>
+          </h4>
+<p id="section-5.1.2-1">This variant extends the base mechanism by allowing the recipient
+to authenticate that the sender possessed a given pre-shared key
+(PSK).  We assume that both parties have been provisioned with both
+the PSK value <code>psk</code> and another byte string <code>pskID</code> that is used to
+identify which PSK should be used.<a href="#section-5.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.2-2">The primary differences from the base case are:<a href="#section-5.1.2-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-5.1.2-3.1">The PSK is used as the <code>salt</code> input to the KDF (instead of 0)<a href="#section-5.1.2-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1.2-3.2">The PSK ID is added to the context string used as the <code>info</code> input
+to the KDF<a href="#section-5.1.2-3.2" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-5.1.2-4">This mechanism is not suitable for use with a low-entropy password
+as the PSK.  A malicious recipient that does not possess the PSK can
+use decryption of a plaintext as an oracle for performing offline
+dictionary attacks.<a href="#section-5.1.2-4" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.1.2-5">
+<pre>
+def SetupPSKS(pkR, info, psk, pskID):
+  zz, enc = Encap(pkR)
+  return enc, KeySchedule(mode_psk, pkR, zz, enc, info,
+                          psk, pskID, default_pkSm)
+
+def SetupPSKR(enc, skR, info, psk, pskID):
+  zz = Decap(enc, skR)
+  return KeySchedule(mode_psk, pk(skR), zz, enc, info,
+                     psk, pskID, default_pkSm)
+</pre><a href="#section-5.1.2-5" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="authentication-using-an-asymmetric-key">
+<section id="section-5.1.3">
+          <h4 id="name-authentication-using-an-asy">
+<a href="#section-5.1.3" class="section-number selfRef">5.1.3. </a><a href="#name-authentication-using-an-asy" class="section-name selfRef">Authentication using an Asymmetric Key</a>
+          </h4>
+<p id="section-5.1.3-1">This variant extends the base mechanism by allowing the recipient
+to authenticate that the sender possessed a given KEM private key.
+This assurance is based on the assumption that
+<code>AuthDecap(enc, skR, pkS)</code> produces the correct shared secret
+only if the encapsulated value <code>enc</code> was produced by
+<code>AuthEncap(pkR, skS)</code>, where <code>skS</code> is the private key corresponding
+to <code>pkS</code>.  In other words, only two people could have produced this
+secret, so if the recipient is one, then the sender must be the
+other.<a href="#section-5.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.1.3-2">The primary differences from the base case are:<a href="#section-5.1.3-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-5.1.3-3.1">The calls to <code>Encap</code> and <code>Decap</code> are replaced with calls to
+<code>AuthEncap</code> and <code>AuthDecap</code>.<a href="#section-5.1.3-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-5.1.3-3.2">The sender public key is added to the context string<a href="#section-5.1.3-3.2" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-5.1.3-4">Obviously, this variant can only be used with a KEM that provides
+<code>AuthEncap()</code> and <code>AuthDecap()</code> procedures.<a href="#section-5.1.3-4" class="pilcrow">¶</a></p>
+<p id="section-5.1.3-5">This mechanism authenticates only the key pair of the sender, not
+any other identity.  If an application wishes to authenticate some
+other identity for the sender (e.g., an email address or domain
+name), then this identity should be included in the <code>info</code> parameter
+to avoid unknown key share attacks.<a href="#section-5.1.3-5" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.1.3-6">
+<pre>
+def SetupAuthS(pkR, info, skS):
+  zz, enc = AuthEncap(pkR, skS)
+  pkSm = Marshal(pk(skS))
+  return enc, KeySchedule(mode_auth, pkR, zz, enc, info,
+                          default_psk, default_pskID, pkSm)
+
+def SetupAuthR(enc, skR, info, pkS):
+  zz = AuthDecap(enc, skR, pkS)
+  pkSm = Marshal(pkS)
+  return KeySchedule(mode_auth, pk(skR), zz, enc, info,
+                     default_psk, default_pskID, pkSm)
+</pre><a href="#section-5.1.3-6" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="authentication-using-both-a-psk-and-an-asymmetric-key">
+<section id="section-5.1.4">
+          <h4 id="name-authentication-using-both-a">
+<a href="#section-5.1.4" class="section-number selfRef">5.1.4. </a><a href="#name-authentication-using-both-a" class="section-name selfRef">Authentication using both a PSK and an Asymmetric Key</a>
+          </h4>
+<p id="section-5.1.4-1">This mode is a straightforward combination of the PSK and
+authenticated modes.  The PSK is passed through to the key schedule
+as in the former, and as in the latter, we use the authenticated KEM
+variants.<a href="#section-5.1.4-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.1.4-2">
+<pre>
+def SetupAuthPSKS(pkR, info, psk, pskID, skS):
+  zz, enc = AuthEncap(pkR, skS)
+  pkSm = Marshal(pk(skS))
+  return enc, KeySchedule(mode_auth_psk, pkR, zz, enc, info,
+                          psk, pskID, pkSm)
+
+def SetupAuthPSKR(enc, skR, info, psk, pskID, pkS):
+  zz = AuthDecap(enc, skR, pkS)
+  pkSm = Marshal(pkS)
+  return KeySchedule(mode_auth_psk, pk(skR), zz, enc, info,
+                     psk, pskID, pkSm)
+</pre><a href="#section-5.1.4-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="hpke-dem">
+<section id="section-5.2">
+        <h3 id="name-encryption-and-decryption">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-encryption-and-decryption" class="section-name selfRef">Encryption and Decryption</a>
+        </h3>
+<p id="section-5.2-1">HPKE allows multiple encryption operations to be done based on a
+given setup transaction.  Since the public-key operations involved
+in setup are typically more expensive than symmetric encryption or
+decryption, this allows applications to "amortize" the cost of the
+public-key operations, reducing the overall overhead.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">In order to avoid nonce reuse, however, this decryption must be
+stateful. Each of the setup procedures above produces a context object
+that stores the required state:<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-5.2-3.1">The AEAD algorithm in use<a href="#section-5.2-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-5.2-3.2">The key to be used with the AEAD algorithm<a href="#section-5.2-3.2" class="pilcrow">¶</a>
+</li>
+<li id="section-5.2-3.3">A base nonce value<a href="#section-5.2-3.3" class="pilcrow">¶</a>
+</li>
+<li id="section-5.2-3.4">A sequence number (initially 0)<a href="#section-5.2-3.4" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-5.2-4">All of these fields except the sequence number are constant.  The
+sequence number is used to provide nonce uniqueness: The nonce used
+for each encryption or decryption operation is the result of XORing
+the base nonce with the current sequence number, encoded as a
+big-endian integer of the same length as the nonce.  Implementations
+MAY use a sequence number that is shorter than the nonce (padding on
+the left with zero), but MUST return an error if the sequence number
+overflows.<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<p id="section-5.2-5">Encryption is unidirectional from sender to recipient. Each encryption
+or decryption operation increments the sequence number for the context
+in use.  The sender's context MUST be used for encryption only. Similarly,
+the recipient's context MUST be used for decryption only. Higher-level
+protocols re-using the HPKE key exchange for more general purposes can
+derive separate keying material as needed using use the Export interface;
+see <a href="#hpke-export" class="xref">Section 5.3</a> for more details.<a href="#section-5.2-5" class="pilcrow">¶</a></p>
+<p id="section-5.2-6">It is up to the application to ensure that encryptions and
+decryptions are done in the proper sequence, so that encryption
+and decryption nonces align. If a Seal or Open operation would cause the <code>seq</code>
+field to wrap, then the implementation MUST return an error.<a href="#section-5.2-6" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.2-7">
+<pre>
+def Context.Nonce(seq):
+  encSeq = encode_big_endian(seq, len(self.nonce))
+  return xor(self.nonce, encSeq)
+
+def Context.IncrementSeq():
+  if self.seq &gt;= (1 &lt;&lt; Nn) - 1:
+    return NonceOverflowError
+  self.seq += 1
+
+def Context.Seal(aad, pt):
+  ct = Seal(self.key, self.Nonce(self.seq), aad, pt)
+  self.IncrementSeq()
+  return ct
+
+def Context.Open(aad, ct):
+  pt = Open(self.key, self.Nonce(self.seq), aad, ct)
+  if pt == OpenError:
+    return OpenError
+  self.IncrementSeq()
+  return pt
+</pre><a href="#section-5.2-7" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="hpke-export">
+<section id="section-5.3">
+        <h3 id="name-secret-export">
+<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-secret-export" class="section-name selfRef">Secret Export</a>
+        </h3>
+<p id="section-5.3-1">HPKE provides a interface for exporting secrets from the encryption Context, similar
+to the TLS 1.3 exporter interface (See <span>[<a href="#RFC8446" class="xref">RFC8446</a>]</span>, Section 7.5). This interface takes as
+input a context string <code>exporter_context</code> and desired length <code>L</code> (in bytes), and produces
+a secret derived from the internal exporter secret using the corresponding KDF Expand
+function.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.3-2">
+<pre>
+def Context.Export(exporter_context, L):
+  return Expand(self.exporter_secret, exporter_context, L)
+</pre><a href="#section-5.3-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="single-shot-apis">
+<section id="section-6">
+      <h2 id="name-single-shot-apis">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-single-shot-apis" class="section-name selfRef">Single-Shot APIs</a>
+      </h2>
+<p id="section-6-1">In many cases, applications encrypt only a single message to a recipient's public key.
+This section provides templates for HPKE APIs that implement stateless "single-shot" encryption
+and decryption using APIs specified in <a href="#hpke-kem" class="xref">Section 5.1.1</a> and <a href="#hpke-dem" class="xref">Section 5.2</a>:<a href="#section-6-1" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-6-2">
+<pre>
+def Seal&lt;MODE&gt;(pkR, info, aad, pt, ...):
+  enc, ctx = Setup&lt;MODE&gt;I(pkR, info, ...)
+  ct = ctx.Seal(aad, pt)
+  return enc, ct
+
+def Open&lt;MODE&gt;(enc, skR, info, aad, ct, ...):
+  ctx = Setup&lt;MODE&gt;R(enc, skR, info, ...)
+  return ctx.Open(aad, ct)
+</pre><a href="#section-6-2" class="pilcrow">¶</a>
+</div>
+<p id="section-6-3">The <code>MODE</code> template parameter is one of Base, PSK, Auth, or AuthPSK. The optional parameters
+indicated by "..."" depend on <code>MODE</code> and may be empty. SetupBase, for example, has no
+additional parameters. Thus, SealAuthPSK and OpenAuthPSK would be implemented as follows:<a href="#section-6-3" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-6-4">
+<pre>
+def SealAuthPSK(pkR, info, aad, pt, psk, pskID, skS):
+  enc, ctx = SetupAuthPSKS(pkR, info, psk, pskID, skS)
+  ct = ctx.Seal(aad, pt)
+  return enc, ct
+
+def OpenAuthPSK(enc, skR, info, aad, ct, psk, pskID, pkS):
+  ctx = SetupAuthPSKR(enc, skR, info, psk, pskID, pkS)
+  return ctx.Open(aad, ct)
+</pre><a href="#section-6-4" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="ciphersuites">
+<section id="section-7">
+      <h2 id="name-algorithm-identifiers">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-algorithm-identifiers" class="section-name selfRef">Algorithm Identifiers</a>
+      </h2>
+<div id="kem-ids">
+<section id="section-7.1">
+        <h3 id="name-key-encapsulation-mechanism">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-key-encapsulation-mechanism" class="section-name selfRef">Key Encapsulation Mechanisms (KEMs)</a>
+        </h3>
+<table class="center" id="table-2">
+          <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Value</th>
+              <th class="text-left" rowspan="1" colspan="1">KEM</th>
+              <th class="text-left" rowspan="1" colspan="1">Nenc</th>
+              <th class="text-left" rowspan="1" colspan="1">Npk</th>
+              <th class="text-left" rowspan="1" colspan="1">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0000</td>
+              <td class="text-left" rowspan="1" colspan="1">(reserved)</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0010</td>
+              <td class="text-left" rowspan="1" colspan="1">DHKEM(P-256)</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#NISTCurves" class="xref">NISTCurves</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0011</td>
+              <td class="text-left" rowspan="1" colspan="1">DHKEM(P-384)</td>
+              <td class="text-left" rowspan="1" colspan="1">48</td>
+              <td class="text-left" rowspan="1" colspan="1">48</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#NISTCurves" class="xref">NISTCurves</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0012</td>
+              <td class="text-left" rowspan="1" colspan="1">DHKEM(P-521)</td>
+              <td class="text-left" rowspan="1" colspan="1">66</td>
+              <td class="text-left" rowspan="1" colspan="1">66</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#NISTCurves" class="xref">NISTCurves</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0020</td>
+              <td class="text-left" rowspan="1" colspan="1">DHKEM(Curve25519)</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#RFC7748" class="xref">RFC7748</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0021</td>
+              <td class="text-left" rowspan="1" colspan="1">DHKEM(Curve448)</td>
+              <td class="text-left" rowspan="1" colspan="1">56</td>
+              <td class="text-left" rowspan="1" colspan="1">56</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#RFC7748" class="xref">RFC7748</a>]</span>
+</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-7.1-2">For the NIST curves P-256 and P-521, the Marshal function of the DH
+scheme produces the normal (non-compressed) representation of the
+public key, according to <span>[<a href="#SECG" class="xref">SECG</a>]</span>.  When these curves are used, the
+recipient of an HPKE ciphertext MUST validate that the ephemeral public
+key <code>pkE</code> is on the curve.  The relevant validation procedures are
+defined in <span>[<a href="#keyagreement" class="xref">keyagreement</a>]</span>.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<p id="section-7.1-3">For the CFRG curves Curve25519 and Curve448, the Marshal function is
+the identity function, since these curves already use fixed-length
+byte strings for public keys.<a href="#section-7.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="kdf-ids">
+<section id="section-7.2">
+        <h3 id="name-key-derivation-functions-kd">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-key-derivation-functions-kd" class="section-name selfRef">Key Derivation Functions (KDFs)</a>
+        </h3>
+<table class="center" id="table-3">
+          <caption><a href="#table-3" class="selfRef">Table 3</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Value</th>
+              <th class="text-left" rowspan="1" colspan="1">KDF</th>
+              <th class="text-left" rowspan="1" colspan="1">Nh</th>
+              <th class="text-left" rowspan="1" colspan="1">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0000</td>
+              <td class="text-left" rowspan="1" colspan="1">(reserved)</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0001</td>
+              <td class="text-left" rowspan="1" colspan="1">HKDF-SHA256</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#RFC5869" class="xref">RFC5869</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0002</td>
+              <td class="text-left" rowspan="1" colspan="1">HKDF-SHA384</td>
+              <td class="text-left" rowspan="1" colspan="1">48</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#RFC5869" class="xref">RFC5869</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0003</td>
+              <td class="text-left" rowspan="1" colspan="1">HKDF-SHA512</td>
+              <td class="text-left" rowspan="1" colspan="1">64</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#RFC5869" class="xref">RFC5869</a>]</span>
+</td>
+            </tr>
+          </tbody>
+        </table>
+</section>
+</div>
+<div id="aead-ids">
+<section id="section-7.3">
+        <h3 id="name-authenticated-encryption-wi">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-authenticated-encryption-wi" class="section-name selfRef">Authenticated Encryption with Associated Data (AEAD) Functions</a>
+        </h3>
+<table class="center" id="table-4">
+          <caption><a href="#table-4" class="selfRef">Table 4</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Value</th>
+              <th class="text-left" rowspan="1" colspan="1">AEAD</th>
+              <th class="text-left" rowspan="1" colspan="1">Nk</th>
+              <th class="text-left" rowspan="1" colspan="1">Nn</th>
+              <th class="text-left" rowspan="1" colspan="1">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0000</td>
+              <td class="text-left" rowspan="1" colspan="1">(reserved)</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+              <td class="text-left" rowspan="1" colspan="1">N/A</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0001</td>
+              <td class="text-left" rowspan="1" colspan="1">AES-GCM-128</td>
+              <td class="text-left" rowspan="1" colspan="1">16</td>
+              <td class="text-left" rowspan="1" colspan="1">12</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#GCM" class="xref">GCM</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0002</td>
+              <td class="text-left" rowspan="1" colspan="1">AES-GCM-256</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">12</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#GCM" class="xref">GCM</a>]</span>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0003</td>
+              <td class="text-left" rowspan="1" colspan="1">ChaCha20Poly1305</td>
+              <td class="text-left" rowspan="1" colspan="1">32</td>
+              <td class="text-left" rowspan="1" colspan="1">12</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <span>[<a href="#RFC8439" class="xref">RFC8439</a>]</span>
+</td>
+            </tr>
+          </tbody>
+        </table>
+</section>
+</div>
+</section>
+</div>
+<div id="sec-considerations">
+<section id="section-8">
+      <h2 id="name-security-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<div id="sec-properties">
+<section id="section-8.1">
+        <h3 id="name-security-properties">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-security-properties" class="section-name selfRef">Security Properties</a>
+        </h3>
+<p id="section-8.1-1">HPKE has several security goals, depending on the mode of operation,
+against active and adaptive attackers that can compromise partial
+secrets of senders and recipients. The desired security goals are
+detailed below:<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-8.1-2.1">Message secrecy: Privacy of the sender's messages, i.e., IND-CCA2
+security<a href="#section-8.1-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-8.1-2.2">Export key secrecy: Indistinguishability of each export
+secret from a uniformly random bitstring of equal length<a href="#section-8.1-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-8.1-2.3">Sender authentication: Proof of sender origin for Auth and AuthPSK
+modes<a href="#section-8.1-2.3" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-8.1-3">It is shown in <span>[<a href="#CS01" class="xref">CS01</a>]</span> that a hybrid scheme of essentially the same
+form described here is IND-CCA2-secure as long as the the underlying KEM
+and AEAD schemes are IND-CCA2-secure.  The main difference between the
+scheme proposed there and the scheme in this document (both named HPKE)
+is that we interpose some KDF calls between the KEM and
+the AEAD.  So further analysis is needed on two fronts, first to verify
+that the additional KDF calls do not cause the IND-CCA2 property to
+fail, and second to verify the two additional properties noted above.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.1-4">This work has been done for the case where the KEM is DHKEM, the AEAD is
+any IND-CCA2 scheme, and the DH group and KDF satisfy the following
+conditions:<a href="#section-8.1-4" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-8.1-5.1">DH group: The gap Diffie-Hellman (GDH) problem is hard <span>[<a href="#GAP" class="xref">GAP</a>]</span>.<a href="#section-8.1-5.1" class="pilcrow">¶</a>
+</li>
+<li id="section-8.1-5.2">Hash: Collision resistance.<a href="#section-8.1-5.2" class="pilcrow">¶</a>
+</li>
+<li id="section-8.1-5.3">Extract: Indifferentiable from a random oracle.<a href="#section-8.1-5.3" class="pilcrow">¶</a>
+</li>
+<li id="section-8.1-5.4">Expand: Behaves as a pseudorandom function wherein the first argument
+is the key.<a href="#section-8.1-5.4" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-8.1-6">In particular, the KDFs and DH groups defined in this document (see
+<a href="#kdf-ids" class="xref">Section 7.2</a> and <a href="#kem-ids" class="xref">Section 7.1</a>) satisfy these properties.<a href="#section-8.1-6" class="pilcrow">¶</a></p>
+<p id="section-8.1-7">The analysis in <span>[<a href="#HPKEAnalysis" class="xref">HPKEAnalysis</a>]</span> demonstrates that under these
+constraints, HPKE continues to provide IND-CCA2 security, and provides
+the additional properties noted above.  The analysis considers two
+variants of HPKE usage: single-shot message encryption and secret key
+export. In the single-shot variant, S uses the single-shot API to use
+the key once to encrypt a plaintext. The export variant is the same as
+single-shot variant, except that the sender additionally exports two
+independent secrets using the secret export interface. We distinguish
+these two variants because the single-shot API does not lend itself to
+use the Export interface.<a href="#section-8.1-7" class="pilcrow">¶</a></p>
+<p id="section-8.1-8">The table below summarizes the main results from <span>[<a href="#HPKEAnalysis" class="xref">HPKEAnalysis</a>]</span>. N/A
+means that a property does not apply for the given mode, whereas X means
+the given mode satisfies the property.<a href="#section-8.1-8" class="pilcrow">¶</a></p>
+<table class="center" id="table-5">
+          <caption><a href="#table-5" class="selfRef">Table 5</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Variant</th>
+              <th class="text-center" rowspan="1" colspan="1">Message Sec.</th>
+              <th class="text-center" rowspan="1" colspan="1">Export Sec.</th>
+              <th class="text-center" rowspan="1" colspan="1">Sender Auth.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Base, single-shot</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">N/A</td>
+              <td class="text-center" rowspan="1" colspan="1">N/A</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">PSK, single-shot</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">N/A</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Auth, single-shot</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">N/A</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">AuthPSK, single-shot</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">N/A</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Base, export</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">N/A</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">PSK, export</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Auth, export</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">AuthPSK, export</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+              <td class="text-center" rowspan="1" colspan="1">X</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-8.1-10">If non-DH-based KEM schemes are to be used with HPKE, further analysis
+will be necessary to prove their security.  The results from <span>[<a href="#CS01" class="xref">CS01</a>]</span>
+provide some indication that any IND-CCA2 KEM will suffice here, but are
+not conclusive given the difference in schemes.<a href="#section-8.1-10" class="pilcrow">¶</a></p>
+<p id="section-8.1-11">In addition, both <span>[<a href="#CS01" class="xref">CS01</a>]</span> and <span>[<a href="#HPKEAnalysis" class="xref">HPKEAnalysis</a>]</span> are premised on classical
+security models and assumptions, and do not consider attackers capable of quantum
+computation. A full proof of post-quantum security would need to take this
+difference into account, in addition to simply using a post-quantum KEM.<a href="#section-8.1-11" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="domain-separation">
+<section id="section-8.2">
+        <h3 id="name-domain-separation">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-domain-separation" class="section-name selfRef">Domain Separation</a>
+        </h3>
+<p id="section-8.2-1">[[RFC editor: please change "RFCXXXX" to the correct number before
+publication.]]<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">The KeySchedule procedure includes the domain separation string "RFCXXXX" in
+each Expand invocation. This ensures any secrets derived in HPKE are independent
+from those used in other protocols, even when derived from the same IKM (secret).
+This domain separation does not protect the KeySchedule 'secret' from use in other
+protocols.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<p id="section-8.2-3">The KeySchedule procedure also separates each Hash invocation, used when deriving
+pskID and info hashes, with unique one-byte prefixes. This ensures that each Hash
+computation (or oracle query) is independent <span>[<a href="#BDG20" class="xref">BDG20</a>]</span>.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="external-requirements-non-goals">
+<section id="section-8.3">
+        <h3 id="name-external-requirements-non-g">
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-external-requirements-non-g" class="section-name selfRef">External Requirements / Non-Goals</a>
+        </h3>
+<p id="section-8.3-1">HPKE is designed to be a fairly low-level primitive, and thus does not provide
+several features that a more high-level protocol might provide, for example:<a href="#section-8.3-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-8.3-2.1">Downgrade prevention - HPKE assumes that the sender and recipient agree on
+what algorithms to use.  Depending on how these algorithms are negotiated, it
+may be possible for an intermediary to force the two parties to use
+suboptimal algorithms.<a href="#section-8.3-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-8.3-2.2">Replay protection - The requirement that ciphertexts be presented to the
+Context.Open function in the same order they were generated by Context.Seal
+provides a degree of replay protection within a stream of ciphertexts
+resulting from a given Context.  HPKE provides no other replay protection.<a href="#section-8.3-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-8.3-2.3">Forward secrecy - HPKE ciphertexts are not forward-secure. In mode_base
+and mode_auth, a given ciphertext can be decrypted if the recipient's public
+encryption key is compromised. In mode_psk and mode_auth_psk, a given
+ciphertext can be decrypted if the recipient's public encryption key and the
+PSK are compromised.<a href="#section-8.3-2.3" class="pilcrow">¶</a>
+</li>
+</ul>
+</section>
+</div>
+<div id="metadata-protection">
+<section id="section-8.4">
+        <h3 id="name-metadata-protection">
+<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-metadata-protection" class="section-name selfRef">Metadata Protection</a>
+        </h3>
+<p id="section-8.4-1">The authenticated modes of HPKE (PSK, Auth, AuthPSK) require that the recipient
+know what key material to use for the sender.  This can be signaled in
+applications by sending the PSK ID (<code>pskID</code> above) and/or the sender's public
+key (<code>pkS</code>).  However, these values themselves might be considered sensitive,
+since in a given application context, they might identify the sender.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
+<p id="section-8.4-2">An application that wishes to protect these metadata values without requiring
+further provisioning of keys can use an additional instance of HPKE, using the
+unauthenticated base mode.  Where the application might have sent <code>(pskID, pkS,
+enc, ciphertext)</code> before, it would now send (enc2, ciphertext2, enc, ciphertext),
+where <code>(enc2, ciphertext2)</code> represent the encryption of the <code>pskID</code> and <code>pkS</code>
+values.<a href="#section-8.4-2" class="pilcrow">¶</a></p>
+<p id="section-8.4-3">The cost of this approach is an additional KEM operation each for the sender and
+the recipient.  A potential lower-cost approach (involving only symmetric
+operations) would be available if the nonce-protection schemes in <span>[<a href="#BNT19" class="xref">BNT19</a>]</span>
+could be extended to cover other metadata.  However, this construction would
+require further analysis.<a href="#section-8.4-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="designated-verifier-signature">
+<section id="section-8.5">
+        <h3 id="name-designated-verifier-signatu">
+<a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-designated-verifier-signatu" class="section-name selfRef">Designated-Verifier Signature</a>
+        </h3>
+<p id="section-8.5-1">The Auth and AuthPSK modes HPKE can be used to construct a lightweight
+"designated-verifier signature" scheme <span>[<a href="#JKR96" class="xref">JKR96</a>]</span>, in the sense that the message
+is authenticated as coming from the sender, but the only party who can verify
+the authentication is the recipient (the holder of <code>skR</code>).<a href="#section-8.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.5-2">To create such a signature, the sender simply performs a normal HPKE setup in
+the proper mode, and calls the Seal method on the resulting context with an
+empty plaintext value and the content to be signed as AAD.  This produces an
+encoded key <code>enc</code> and a ciphertext value that contains only the AAD tag.<a href="#section-8.5-2" class="pilcrow">¶</a></p>
+<p id="section-8.5-3">For example, using DHKEM-X25519 and AES-128-GCM, this would produce a 48-byte
+signature comprising a 32-byte ephemeral X25519 key and a 16-byte GCM tag.<a href="#section-8.5-3" class="pilcrow">¶</a></p>
+<p id="section-8.5-4">To verify such a signature, the recipient performs the corresponding HPKE setup
+and calls Open with the provided ciphertext.  If the AEAD authentication passes,
+then the signature is valid.<a href="#section-8.5-4" class="pilcrow">¶</a></p>
+<p id="section-8.5-5">This scheme re-uses the authentication scheme underlying the AEAD algorithm in
+use, while using the KEM to establish a one-time authentication key from a pair
+of KEM public keys.<a href="#section-8.5-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="message-encoding">
+<section id="section-9">
+      <h2 id="name-message-encoding">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-message-encoding" class="section-name selfRef">Message Encoding</a>
+      </h2>
+<p id="section-9-1">This document does not specify a wire format encoding for HPKE messages. Applications
+that adopt HPKE must therefore specify an unambiguous encoding mechanism which includes,
+minimally: the encapsulated value <code>enc</code>, ciphertext value(s) (and order if there are
+multiple), and any info values that are not implicit.<a href="#section-9-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-10">
+      <h2 id="name-iana-considerations">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-10-1">This document requests the creation of three new IANA registries:<a href="#section-10-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-10-2.1">HPKE KEM Identifiers<a href="#section-10-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-10-2.2">HPKE KDF Identifiers<a href="#section-10-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-10-2.3">HPKE AEAD Identifiers<a href="#section-10-2.3" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-10-3">All of these registries should be under a heading of "Hybrid Public Key
+Encryption", and administered under a Specification Required policy <span>[<a href="#RFC8126" class="xref">RFC8126</a>]</span><a href="#section-10-3" class="pilcrow">¶</a></p>
+<div id="kem-identifiers">
+<section id="section-10.1">
+        <h3 id="name-kem-identifiers">
+<a href="#section-10.1" class="section-number selfRef">10.1. </a><a href="#name-kem-identifiers" class="section-name selfRef">KEM Identifiers</a>
+        </h3>
+<p id="section-10.1-1">The "HPKE KEM Identifiers" registry lists identifiers for key encapsulation
+algorithms defined for use with HPKE.  These are two-byte values, so the
+maximum possible value is 0xFFFF = 65535.<a href="#section-10.1-1" class="pilcrow">¶</a></p>
+<p id="section-10.1-2">Template:<a href="#section-10.1-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-10.1-3.1">Value: The two-byte identifier for the algorithm<a href="#section-10.1-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-10.1-3.2">KEM: The name of the algorithm<a href="#section-10.1-3.2" class="pilcrow">¶</a>
+</li>
+<li id="section-10.1-3.3">Nenc: The length in bytes of an encapsulated key produced by the algorithm<a href="#section-10.1-3.3" class="pilcrow">¶</a>
+</li>
+<li id="section-10.1-3.4">Npk: The length in bytes of an encoded public key for the algorithm<a href="#section-10.1-3.4" class="pilcrow">¶</a>
+</li>
+<li id="section-10.1-3.5">Reference: Where this algorithm is defined<a href="#section-10.1-3.5" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-10.1-4">Initial contents: Provided in <a href="#kem-ids" class="xref">Section 7.1</a><a href="#section-10.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="kdf-identifiers">
+<section id="section-10.2">
+        <h3 id="name-kdf-identifiers">
+<a href="#section-10.2" class="section-number selfRef">10.2. </a><a href="#name-kdf-identifiers" class="section-name selfRef">KDF Identifiers</a>
+        </h3>
+<p id="section-10.2-1">The "HPKE KDF Identifiers" registry lists identifiers for key derivation
+functions defined for use with HPKE.  These are two-byte values, so the maximum
+possible value is 0xFFFF = 65535.<a href="#section-10.2-1" class="pilcrow">¶</a></p>
+<p id="section-10.2-2">Template:<a href="#section-10.2-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-10.2-3.1">Value: The two-byte identifier for the algorithm<a href="#section-10.2-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-10.2-3.2">KDF: The name of the algorithm<a href="#section-10.2-3.2" class="pilcrow">¶</a>
+</li>
+<li id="section-10.2-3.3">Nh: The length in bytes of the output of the KDF<a href="#section-10.2-3.3" class="pilcrow">¶</a>
+</li>
+<li id="section-10.2-3.4">Reference: Where this algorithm is defined<a href="#section-10.2-3.4" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-10.2-4">Initial contents: Provided in <a href="#kdf-ids" class="xref">Section 7.2</a><a href="#section-10.2-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="aead-identifiers">
+<section id="section-10.3">
+        <h3 id="name-aead-identifiers">
+<a href="#section-10.3" class="section-number selfRef">10.3. </a><a href="#name-aead-identifiers" class="section-name selfRef">AEAD Identifiers</a>
+        </h3>
+<p id="section-10.3-1">The "HPKE AEAD Identifiers" registry lists identifiers for authenticated
+encryption with associated data (AEAD) algorithms defined for use with HPKE.
+These are two-byte values, so the maximum possible value is 0xFFFF = 65535.<a href="#section-10.3-1" class="pilcrow">¶</a></p>
+<p id="section-10.3-2">Template:<a href="#section-10.3-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-10.3-3.1">Value: The two-byte identifier for the algorithm<a href="#section-10.3-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-10.3-3.2">AEAD: The name of the algorithm<a href="#section-10.3-3.2" class="pilcrow">¶</a>
+</li>
+<li id="section-10.3-3.3">Nk: The length in bytes of a key for this algorithm<a href="#section-10.3-3.3" class="pilcrow">¶</a>
+</li>
+<li id="section-10.3-3.4">Nn: The length in bytes of a nonce for this algorithm<a href="#section-10.3-3.4" class="pilcrow">¶</a>
+</li>
+<li id="section-10.3-3.5">Reference: Where this algorithm is defined<a href="#section-10.3-3.5" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-10.3-4">Initial contents: Provided in <a href="#aead-ids" class="xref">Section 7.3</a><a href="#section-10.3-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<section id="section-11">
+      <h2 id="name-references">
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<section id="section-11.1">
+        <h3 id="name-normative-references">
+<a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+<dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc2119">https://www.rfc-editor.org/info/rfc2119</a>&gt;</span>. </dd>
+<dt id="RFC5116">[RFC5116]</dt>
+<dd>
+<span class="refAuthor">McGrew, D.</span>, <span class="refTitle">"An Interface and Algorithms for Authenticated Encryption"</span>, <span class="seriesInfo">RFC 5116</span>, <span class="seriesInfo">DOI 10.17487/RFC5116</span>, <time datetime="2008-01">January 2008</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc5116">https://www.rfc-editor.org/info/rfc5116</a>&gt;</span>. </dd>
+<dt id="RFC8126">[RFC8126]</dt>
+<dd>
+<span class="refAuthor">Cotton, M.</span><span class="refAuthor">, Leiba, B.</span><span class="refAuthor">, and T. Narten</span>, <span class="refTitle">"Guidelines for Writing an IANA Considerations Section in RFCs"</span>, <span class="seriesInfo">BCP 26</span>, <span class="seriesInfo">RFC 8126</span>, <span class="seriesInfo">DOI 10.17487/RFC8126</span>, <time datetime="2017-06">June 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8126">https://www.rfc-editor.org/info/rfc8126</a>&gt;</span>. </dd>
+<dt id="RFC8174">[RFC8174]</dt>
+<dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8174">https://www.rfc-editor.org/info/rfc8174</a>&gt;</span>. </dd>
+</dl>
+</section>
+<section id="section-11.2">
+        <h3 id="name-informative-references">
+<a href="#section-11.2" class="section-number selfRef">11.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="ANSI">[ANSI]</dt>
+<dd>
+<span class="refTitle">"Public Key Cryptography for the Financial Services Industry -- Key Agreement and Key Transport Using Elliptic Curve Cryptography"</span>, <time datetime="2001">2001</time>. </dd>
+<dt id="BDG20">[BDG20]</dt>
+<dd>
+<span class="refTitle">"Separate Your Domains - NIST PQC KEMs, Oracle Cloning and Read-Only Indifferentiability"</span>, <time datetime="2020">2020</time>, <span>&lt;<a href="https://eprint.iacr.org/2020/241.pdf">https://eprint.iacr.org/2020/241.pdf</a>&gt;</span>. </dd>
+<dt id="BNT19">[BNT19]</dt>
+<dd>
+<span class="refTitle">"Nonces Are Noticed: AEAD Revisited"</span>, <time datetime="2019">2019</time>, <span>&lt;<a href="http://dx.doi.org/10.1007/978-3-030-26948-7_9">http://dx.doi.org/10.1007/978-3-030-26948-7_9</a>&gt;</span>. </dd>
+<dt id="CS01">[CS01]</dt>
+<dd>
+<span class="refTitle">"Design and Analysis of Practical Public-Key Encryption Schemes Secure against Adaptive Chosen Ciphertext Attack"</span>, <time datetime="2001">2001</time>, <span>&lt;<a href="https://eprint.iacr.org/2001/108">https://eprint.iacr.org/2001/108</a>&gt;</span>. </dd>
+<dt id="fiveG">[fiveG]</dt>
+<dd>
+<span class="refTitle">"Security architecture and procedures for 5G System"</span>, <time datetime="2019">2019</time>, <span>&lt;<a href="https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=3169">https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=3169</a>&gt;</span>. </dd>
+<dt id="GAP">[GAP]</dt>
+<dd>
+<span class="refTitle">"The Gap-Problems - a New Class of Problems for the Security of Cryptographic Schemes"</span>, <span class="seriesInfo">ISBN 978-3-540-44586-9</span>, <time datetime="2001">2001</time>, <span>&lt;<a href="https://link.springer.com/content/pdf/10.1007/3-540-44586-2_8.pdf">https://link.springer.com/content/pdf/10.1007/3-540-44586-2_8.pdf</a>&gt;</span>. </dd>
+<dt id="GCM">[GCM]</dt>
+<dd>
+<span class="refAuthor">Dworkin, M.</span>, <span class="refTitle">"Recommendation for block cipher modes of operation :"</span>, <span class="seriesInfo">DOI 10.6028/nist.sp.800-38d</span>, <span class="seriesInfo">National Institute of Standards and Technology report</span>, <time datetime="2007">2007</time>, <span>&lt;<a href="https://doi.org/10.6028/nist.sp.800-38d">https://doi.org/10.6028/nist.sp.800-38d</a>&gt;</span>. </dd>
+<dt id="HPKEAnalysis">[HPKEAnalysis]</dt>
+<dd>
+<span class="refTitle">"An Analysis of Hybrid Public Key Encryption"</span>, <time datetime="2020">2020</time>, <span>&lt;<a href="https://eprint.iacr.org/2020/243.pdf">https://eprint.iacr.org/2020/243.pdf</a>&gt;</span>. </dd>
+<dt id="I-D.ietf-mls-protocol">[I-D.ietf-mls-protocol]</dt>
+<dd>
+<span class="refAuthor">Barnes, R.</span><span class="refAuthor">, Beurdouche, B.</span><span class="refAuthor">, Millican, J.</span><span class="refAuthor">, Omara, E.</span><span class="refAuthor">, Cohn-Gordon, K.</span><span class="refAuthor">, and R. Robert</span>, <span class="refTitle">"The Messaging Layer Security (MLS) Protocol"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-mls-protocol-08</span>, <time datetime="2019-11-17">17 November 2019</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-mls-protocol-08.txt">http://www.ietf.org/internet-drafts/draft-ietf-mls-protocol-08.txt</a>&gt;</span>. </dd>
+<dt id="I-D.ietf-tls-esni">[I-D.ietf-tls-esni]</dt>
+<dd>
+<span class="refAuthor">Rescorla, E.</span><span class="refAuthor">, Oku, K.</span><span class="refAuthor">, Sullivan, N.</span><span class="refAuthor">, and C. Wood</span>, <span class="refTitle">"Encrypted Server Name Indication for TLS 1.3"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-tls-esni-05</span>, <time datetime="2019-11-04">4 November 2019</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-tls-esni-05.txt">http://www.ietf.org/internet-drafts/draft-ietf-tls-esni-05.txt</a>&gt;</span>. </dd>
+<dt id="IEEE">[IEEE]</dt>
+<dd>
+<span class="refTitle">"IEEE 1363a, Standard Specifications for Public Key Cryptography - Amendment 1 -- Additional Techniques"</span>, <time datetime="2004">2004</time>. </dd>
+<dt id="ISO">[ISO]</dt>
+<dd>
+<span class="refTitle">"ISO/IEC 18033-2, Information Technology - Security Techniques - Encryption Algorithms - Part 2 -- Asymmetric Ciphers"</span>, <time datetime="2006">2006</time>. </dd>
+<dt id="JKR96">[JKR96]</dt>
+<dd>
+<span class="refTitle">"Designated Verifier Proofs and Their Applications"</span>, <time datetime="1996">1996</time>, <span>&lt;<a href="https://doi.org/10.1007%2F3-540-49677-7_30">https://doi.org/10.1007%2F3-540-49677-7_30</a>&gt;</span>. </dd>
+<dt id="keyagreement">[keyagreement]</dt>
+<dd>
+<span class="refAuthor">Barker, E.</span><span class="refAuthor">, Chen, L.</span><span class="refAuthor">, Roginsky, A.</span><span class="refAuthor">, and M. Smid</span>, <span class="refTitle">"Recommendation for Pair-Wise Key Establishment Schemes Using Discrete Logarithm Cryptography"</span>, <span class="seriesInfo">DOI 10.6028/nist.sp.800-56ar2</span>, <span class="seriesInfo">National Institute of Standards and Technology report</span>, <time datetime="2013-05">May 2013</time>, <span>&lt;<a href="https://doi.org/10.6028/nist.sp.800-56ar2">https://doi.org/10.6028/nist.sp.800-56ar2</a>&gt;</span>. </dd>
+<dt id="MAEA10">[MAEA10]</dt>
+<dd>
+<span class="refTitle">"A Comparison of the Standardized Versions of ECIES"</span>, <time datetime="2010">2010</time>, <span>&lt;<a href="http://sceweb.sce.uhcl.edu/yang/teaching/csci5234WebSecurityFall2011/Chaum-blind-signatures.PDF">http://sceweb.sce.uhcl.edu/yang/teaching/csci5234WebSecurityFall2011/Chaum-blind-signatures.PDF</a>&gt;</span>. </dd>
+<dt id="NISTCurves">[NISTCurves]</dt>
+<dd>
+<span class="refTitle">"Digital Signature Standard (DSS)"</span>, <span class="seriesInfo">DOI 10.6028/nist.fips.186-4</span>, <span class="seriesInfo">National Institute of Standards and Technology report</span>, <time datetime="2013-07">July 2013</time>, <span>&lt;<a href="https://doi.org/10.6028/nist.fips.186-4">https://doi.org/10.6028/nist.fips.186-4</a>&gt;</span>. </dd>
+<dt id="RFC5869">[RFC5869]</dt>
+<dd>
+<span class="refAuthor">Krawczyk, H.</span><span class="refAuthor"> and P. Eronen</span>, <span class="refTitle">"HMAC-based Extract-and-Expand Key Derivation Function (HKDF)"</span>, <span class="seriesInfo">RFC 5869</span>, <span class="seriesInfo">DOI 10.17487/RFC5869</span>, <time datetime="2010-05">May 2010</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc5869">https://www.rfc-editor.org/info/rfc5869</a>&gt;</span>. </dd>
+<dt id="RFC6637">[RFC6637]</dt>
+<dd>
+<span class="refAuthor">Jivsov, A.</span>, <span class="refTitle">"Elliptic Curve Cryptography (ECC) in OpenPGP"</span>, <span class="seriesInfo">RFC 6637</span>, <span class="seriesInfo">DOI 10.17487/RFC6637</span>, <time datetime="2012-06">June 2012</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc6637">https://www.rfc-editor.org/info/rfc6637</a>&gt;</span>. </dd>
+<dt id="RFC7748">[RFC7748]</dt>
+<dd>
+<span class="refAuthor">Langley, A.</span><span class="refAuthor">, Hamburg, M.</span><span class="refAuthor">, and S. Turner</span>, <span class="refTitle">"Elliptic Curves for Security"</span>, <span class="seriesInfo">RFC 7748</span>, <span class="seriesInfo">DOI 10.17487/RFC7748</span>, <time datetime="2016-01">January 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc7748">https://www.rfc-editor.org/info/rfc7748</a>&gt;</span>. </dd>
+<dt id="RFC8439">[RFC8439]</dt>
+<dd>
+<span class="refAuthor">Nir, Y.</span><span class="refAuthor"> and A. Langley</span>, <span class="refTitle">"ChaCha20 and Poly1305 for IETF Protocols"</span>, <span class="seriesInfo">RFC 8439</span>, <span class="seriesInfo">DOI 10.17487/RFC8439</span>, <time datetime="2018-06">June 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8439">https://www.rfc-editor.org/info/rfc8439</a>&gt;</span>. </dd>
+<dt id="RFC8446">[RFC8446]</dt>
+<dd>
+<span class="refAuthor">Rescorla, E.</span>, <span class="refTitle">"The Transport Layer Security (TLS) Protocol Version 1.3"</span>, <span class="seriesInfo">RFC 8446</span>, <span class="seriesInfo">DOI 10.17487/RFC8446</span>, <time datetime="2018-08">August 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8446">https://www.rfc-editor.org/info/rfc8446</a>&gt;</span>. </dd>
+<dt id="SECG">[SECG]</dt>
+<dd>
+<span class="refTitle">"Elliptic Curve Cryptography, Standards for Efficient Cryptography Group, ver. 2"</span>, <time datetime="2009">2009</time>, <span>&lt;<a href="https://secg.org/sec1-v2.pdf">https://secg.org/sec1-v2.pdf</a>&gt;</span>. </dd>
+<dt id="TestVectors">[TestVectors]</dt>
+<dd>
+<span class="refTitle">"HPKE Test Vectors"</span>, <time datetime="2019">2019</time>, <span>&lt;<a href="https://github.com/cfrg/draft-irtf-cfrg-hpke/blob/1e98830311b27f9af00787c16e2c5ac43abeadfb/test-vectors.json">https://github.com/cfrg/draft-irtf-cfrg-hpke/blob/1e98830311b27f9af00787c16e2c5ac43abeadfb/test-vectors.json</a>&gt;</span>. </dd>
+</dl>
+</section>
+</section>
+<div id="test-vectors">
+<section id="section-appendix.a">
+      <h2 id="name-test-vectors">
+<a href="#section-appendix.a" class="section-number selfRef">Appendix A. </a><a href="#name-test-vectors" class="section-name selfRef">Test Vectors</a>
+      </h2>
+<p id="section-appendix.a-1">These test vectors are also available in JSON format at <span>[<a href="#TestVectors" class="xref">TestVectors</a>]</span>.<a href="#section-appendix.a-1" class="pilcrow">¶</a></p>
+<div id="dhkemcurve25519-hkdf-sha256-aes-gcm-128">
+<section id="section-a.1">
+        <h2 id="name-dhkemcurve25519-hkdf-sha256">
+<a href="#section-a.1" class="section-number selfRef">A.1. </a><a href="#name-dhkemcurve25519-hkdf-sha256" class="section-name selfRef">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a>
+        </h2>
+<div id="authpsk-setup-information">
+<section id="section-a.1.1">
+          <h3 id="name-authpsk-setup-information">
+<a href="#section-a.1.1" class="section-number selfRef">A.1.1. </a><a href="#name-authpsk-setup-information" class="section-name selfRef">AuthPSK Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.1.1-1">
+<pre>
+mode: 3
+kemID: 2
+kdfID: 1
+aeadID: 1
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: b6510cb5e716a9a482b5415c53c0c03cc2843036660a4a41c0ae5ff2153da8bb
+skS: fae69766a126d64f01d0e7d98cd6ec3c070e7adbaad5175cdb85c726e645fab3
+skE: a6b6bbb312dbebe9845ad17276d00177665a566a678f23e3cdd90246d6d7bc1b
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: ad24daab7cf5292112fe0c88d9b718ba1c13b9de117a562d81143e5cd44a6a34
+pkS: 8fa928b39e2ac2e9e5169c82ac4858ed73e873b3997bd1c9f959b1536770bd70
+pkE: 565332007b0fa753345902168c10a0ada434346dec1043f590e7cf2b65889825
+enc: 565332007b0fa753345902168c10a0ada434346dec1043f590e7cf2b65889825
+zz: 86be5ab07841ec62f86a9229b7c3a1ccc273a984aba4d889bc614ae781f9c42fe23f
+a8affd75d61a5af02592b599f6f701a967d8d34317c0d9a3a1b3ce5fb95c
+context: 03000200010001565332007b0fa753345902168c10a0ada434346dec1043f59
+0e7cf2b65889825ad24daab7cf5292112fe0c88d9b718ba1c13b9de117a562d81143e5cd
+44a6a348fa928b39e2ac2e9e5169c82ac4858ed73e873b3997bd1c9f959b1536770bd70e
+ca994d516108a16db86e155390f3c3cec6f0aff60ade1ae9e3189140b0f3dea55c404062
+9c64c5efec2f7230407d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 0e360737217bf54c4f9660414ad857dfcf0a2419aca181bd8ecdbe8dd1563a36
+key: 9b59048c7fa79046b30866f60a14c7b6
+nonce: 9e1b30052d1260a35b439162
+</pre><a href="#section-a.1.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions">
+<section id="section-a.1.1.1">
+            <h4 id="name-encryptions">
+<a href="#section-a.1.1.1" class="section-number selfRef">A.1.1.1. </a><a href="#name-encryptions" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.1.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 9e1b30052d1260a35b439162
+ciphertext: 7a9b7ce26eb18ff13f34e4e05e3c0064737c06000ffb9dd900f1eb63abb8
+39f17af22009e38944bdf7842f6ce5
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 9e1b30052d1260a35b439163
+ciphertext: 0d4423c76fae6e6e38ef9b5768c16238ec0ff20014ac0d84b49d87cd0056
+2d05ef67ab442b375d51bd1e931f62
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 9e1b30052d1260a35b439160
+ciphertext: 9f635ce5297959256dbcdb1acbbc7bb5a8f1100511090232e2e8f3d6ee4e
+067a2c4311401b5f91ae7f5c0a99dc
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 9e1b30052d1260a35b439166
+ciphertext: 5b0a5bc354a87a07226abf016e8e689a6316cb6c42fa3506dedba813e042
+9b8e3cacc2e6d311e900d6441f36be
+
+</pre><a href="#section-a.1.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemcurve25519-hkdf-sha256-aes-gcm-128-1">
+<section id="section-a.2">
+        <h2 id="name-dhkemcurve25519-hkdf-sha256-">
+<a href="#section-a.2" class="section-number selfRef">A.2. </a><a href="#name-dhkemcurve25519-hkdf-sha256-" class="section-name selfRef">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a>
+        </h2>
+<div id="base-setup-information">
+<section id="section-a.2.1">
+          <h3 id="name-base-setup-information">
+<a href="#section-a.2.1" class="section-number selfRef">A.2.1. </a><a href="#name-base-setup-information" class="section-name selfRef">Base Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.2.1-1">
+<pre>
+mode: 0
+kemID: 2
+kdfID: 1
+aeadID: 1
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 39516b2f05e9757e21331c6f2019045f52cee01a741e2a8b50380408d0717fd9
+skS: eea949550bb218c921ab85cbc5003f4ef6257db1b47b7ed63a223c8360ef81e3
+skE: a1f7746c45d1a0eb72b996e0e7ecddba0e60a583a5e143796981101a3aaf8966
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 14fdb807c79fb787d47890d502bce7c335d0809a053b9287e30fc608fcfc9d26
+pkS: 6eac89bc5d63e7b40c394a4218b6a8203803749f95fca2369611ed41afb97e06
+pkE: 0454a5a10ecaf982219eae4b5c36bc3e1606813caae1d262528396c60de44e3d
+enc: 0454a5a10ecaf982219eae4b5c36bc3e1606813caae1d262528396c60de44e3d
+zz: 15178ef77262b0468ee828a6da4f2620434a9edfdddfe9256ac53f8c6b7e575d
+context: 000002000100010454a5a10ecaf982219eae4b5c36bc3e1606813caae1d2625
+28396c60de44e3d14fdb807c79fb787d47890d502bce7c335d0809a053b9287e30fc608f
+cfc9d260000000000000000000000000000000000000000000000000000000000000000e
+3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85555c404062
+9c64c5efec2f7230407d612d16289d7c5d7afcf9340280abd2de1ab
+secret: c5fdbbad5c72ed703581bbcd3fe890a7ed46d6bf00c73c9755bffbcd6744f22b
+key: 11cf34f93b3d1e8f2e36f91c5a2d6818
+nonce: 23acef669d7f3bcc98f6d0ab
+</pre><a href="#section-a.2.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-1">
+<section id="section-a.2.1.1">
+            <h4 id="name-encryptions-2">
+<a href="#section-a.2.1.1" class="section-number selfRef">A.2.1.1. </a><a href="#name-encryptions-2" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.2.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 23acef669d7f3bcc98f6d0ab
+ciphertext: 13fc68aef8e2c4591a0dd92c01ffe9573314d881cf71dd5708644ee71848
+18e457de3b4d51eb1deb4f0beb35d1
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 23acef669d7f3bcc98f6d0aa
+ciphertext: 2d7f0e514ce14abf93b0fcc34347e20d23008465c6f98aedc1f1fa806bfc
+07708ff20ae9989bb770b18493f3af
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 23acef669d7f3bcc98f6d0a9
+ciphertext: 3fa07d648ba64a5dd3816c2a512937c2a58b8428a1067b5ac15841541d5c
+6d28cd415faba7d552d606d6c5f48c
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 23acef669d7f3bcc98f6d0af
+ciphertext: 3aeeea18f990589141df055a90f382a8096dbdae8f912291cfeff475ede4
+f9b023c3ce88f499f5a2dc44454241
+
+</pre><a href="#section-a.2.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemcurve25519-hkdf-sha256-aes-gcm-128-2">
+<section id="section-a.3">
+        <h2 id="name-dhkemcurve25519-hkdf-sha256-a">
+<a href="#section-a.3" class="section-number selfRef">A.3. </a><a href="#name-dhkemcurve25519-hkdf-sha256-a" class="section-name selfRef">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a>
+        </h2>
+<div id="psk-setup-information">
+<section id="section-a.3.1">
+          <h3 id="name-psk-setup-information">
+<a href="#section-a.3.1" class="section-number selfRef">A.3.1. </a><a href="#name-psk-setup-information" class="section-name selfRef">PSK Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.3.1-1">
+<pre>
+mode: 1
+kemID: 2
+kdfID: 1
+aeadID: 1
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: c903da955074d28232e6ba339f4852abe9b4cb2383dce60ca88d6d14b16fc3e8
+skS: 924b59aae3bcec73b8c2533513dfb0059c19e4ec8bd78e94cae7b73c2b8fe037
+skE: f35123835eb4d8858e7f01c81840ec21b30d444c23f2e26c67f299e0c06df023
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: f1a4ebd32e84fe2614ad0a7270fb7dff328f275dc8b9d54c2345e5518130b42f
+pkS: 6b5dcac8182954357e45a6f9eee722cab9509920441ecc3d2ada5d13f5dbda42
+pkE: c44b2464180ddc477d579b824b2fc7931b0f59138f115af395443fd692ae1661
+enc: c44b2464180ddc477d579b824b2fc7931b0f59138f115af395443fd692ae1661
+zz: 8d669b593e5bc3bbdbde2a95ae892e68976a859136ebd77ea41a09d16602db57
+context: 01000200010001c44b2464180ddc477d579b824b2fc7931b0f59138f115af39
+5443fd692ae1661f1a4ebd32e84fe2614ad0a7270fb7dff328f275dc8b9d54c2345e5518
+130b42f0000000000000000000000000000000000000000000000000000000000000000e
+ca994d516108a16db86e155390f3c3cec6f0aff60ade1ae9e3189140b0f3dea55c404062
+9c64c5efec2f7230407d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 640de51e7b5ae69424e64c931d7f28d9d495ca9c4c2ffdbc5c9f8a611dfa58c3
+key: 53ade960668aa4983b4475e0273c2d9b
+nonce: 86b6e1851b3de8f5793da87c
+</pre><a href="#section-a.3.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-2">
+<section id="section-a.3.1.1">
+            <h4 id="name-encryptions-3">
+<a href="#section-a.3.1.1" class="section-number selfRef">A.3.1.1. </a><a href="#name-encryptions-3" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.3.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 86b6e1851b3de8f5793da87c
+ciphertext: 680566a43d511463e8a64d81e89c9a2caacaaa268c815a864bbd4bd67edd
+5300e1d1257f89962fa473c0e41918
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 86b6e1851b3de8f5793da87d
+ciphertext: a990169c45c7ef5cfaf1ee040f64e946b71424ad74165f59ef13ffe752e9
+ea6d5e7e6edd366fdb62f76840b221
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 86b6e1851b3de8f5793da87e
+ciphertext: bb6acca5ee76f39ff44feea5a6d8d0b0a94f71767dffb24c023d2ba908c9
+4c27b14ea1d1aa132088cdd801c7d0
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 86b6e1851b3de8f5793da878
+ciphertext: 001a42b2883eaf05954a784101575dc382f0fe5e61ea2e32dbb80d788ec7
+3506e31fe0dc67ef7413e34af45c94
+
+</pre><a href="#section-a.3.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemcurve25519-hkdf-sha256-aes-gcm-128-3">
+<section id="section-a.4">
+        <h2 id="name-dhkemcurve25519-hkdf-sha256-ae">
+<a href="#section-a.4" class="section-number selfRef">A.4. </a><a href="#name-dhkemcurve25519-hkdf-sha256-ae" class="section-name selfRef">DHKEM(Curve25519), HKDF-SHA256, AES-GCM-128</a>
+        </h2>
+<div id="auth-setup-information">
+<section id="section-a.4.1">
+          <h3 id="name-auth-setup-information">
+<a href="#section-a.4.1" class="section-number selfRef">A.4.1. </a><a href="#name-auth-setup-information" class="section-name selfRef">Auth Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.4.1-1">
+<pre>
+mode: 2
+kemID: 2
+kdfID: 1
+aeadID: 1
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 0a08a01d1f7033200bc94e8a551f7ef0b1c076940e2a4eb6d63df9cb03f65b66
+skS: 274e3083ca1c7462f80b2586b811e8058f7d5077aaf57829804a632555bed1a6
+skE: 5bb3e4aa6deff90de795b4b0f8dde7fa315a25d8b1a372324b60c09142ae8790
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: fcc53e696c9e98508909c461fd173c315d6fbdfb8bc5145bc5e14d8e8bdc891b
+pkS: 8dce67e0beb5cbbba1f02f527f6bdf21d739d95f8236c408a231e7c5994e987a
+pkE: 8e0385b6a817d31fa221a24a743d52c2f28babc3fd9c472b465ab3c554eb8705
+enc: 8e0385b6a817d31fa221a24a743d52c2f28babc3fd9c472b465ab3c554eb8705
+zz: c23a969bb27388e124753cddb87b961dcb8ea69df6ce06e2c38cf6b48a5baa0afcb8
+87a3b59ea470e088c0c2438d52a6d62165edc7a574282b5600f85eb77920
+context: 020002000100018e0385b6a817d31fa221a24a743d52c2f28babc3fd9c472b4
+65ab3c554eb8705fcc53e696c9e98508909c461fd173c315d6fbdfb8bc5145bc5e14d8e8
+bdc891b8dce67e0beb5cbbba1f02f527f6bdf21d739d95f8236c408a231e7c5994e987ae
+3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85555c404062
+9c64c5efec2f7230407d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 4daa0f01aeb98cbeaf4df37951738703e302377c3e67781a82215e5cc08c1015
+key: 37d7bd91850532cd99a7ef92005385e5
+nonce: a4d99fcff465f605298e42ed
+</pre><a href="#section-a.4.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-3">
+<section id="section-a.4.1.1">
+            <h4 id="name-encryptions-4">
+<a href="#section-a.4.1.1" class="section-number selfRef">A.4.1.1. </a><a href="#name-encryptions-4" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.4.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: a4d99fcff465f605298e42ed
+ciphertext: 819dde5d20c32ab17b951ec95193e487e859e66f85b51ed8fe26ac1ef8ec
+6a81f58e36a33bcfc753b6f99f6b85
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: a4d99fcff465f605298e42ec
+ciphertext: a74432530cedd02492e2a3b634e7c60e1be96099d00dbe7f1a98dad8cd0c
+8ded65814ee41364a14f38abf71f36
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: a4d99fcff465f605298e42ef
+ciphertext: 83097210c9db0f6523f0fae2b501a8e0d2c0f07c051388aa8fdb1c7bd773
+6da75b89b296fe9e1132a9cff06f82
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: a4d99fcff465f605298e42e9
+ciphertext: 37bb31e8bdc4a604610a4cd9aa0bbf6b581cf3123b62455c41776b335f45
+be8cca0d34a5cb1b2f18cdf7befd64
+
+</pre><a href="#section-a.4.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-256-hkdf-sha256-chacha20poly1305">
+<section id="section-a.5">
+        <h2 id="name-dhkemp-256-hkdf-sha256-chac">
+<a href="#section-a.5" class="section-number selfRef">A.5. </a><a href="#name-dhkemp-256-hkdf-sha256-chac" class="section-name selfRef">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a>
+        </h2>
+<div id="base-setup-information-1">
+<section id="section-a.5.1">
+          <h3 id="name-base-setup-information-2">
+<a href="#section-a.5.1" class="section-number selfRef">A.5.1. </a><a href="#name-base-setup-information-2" class="section-name selfRef">Base Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.5.1-1">
+<pre>
+mode: 0
+kemID: 1
+kdfID: 1
+aeadID: 3
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: efd90477fdb7b8f60357eec8d7ae348fef38b0c55c3298c09caf9d575990bd22
+skS: 2ee3b88417a20b5fb0a527fefaae4066a6449d2d75bed96fa2478d58f300c411
+skE: 2118dc1de1f6578b3576b4e6996fa6517ceb28a403fce626c8e0d430bd571f8b
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 0441aa0ed8d749bab7f9a2ed9515ea60ad5b5cace45710f4ce6bf99bb44a1069d8a
+9c12ef2f514fb1c9185c8db167c821b2aeb38d1f821ba1164101c85ede7ee13
+pkS: 047a9f60ef11a46a211fa3ca38c14430a282cefac5b90866918d64ffad2cdfe7d41
+fed52aaea83f703407ed9bb3db950023a1accb689ba91b5743cec9d4680d080
+pkE: 049904661176dd864002718fee7b491330d54f45bd37172b6b9ae8038cce88b9f9f
+ad47829699477de2fb014827b4a8e7f1e4a870304aad3d7986d68d35cd07ff6
+enc: 049904661176dd864002718fee7b491330d54f45bd37172b6b9ae8038cce88b9f9f
+ad47829699477de2fb014827b4a8e7f1e4a870304aad3d7986d68d35cd07ff6
+zz: cd6e7bb5ff8c134f2a925e9ca022e65f5b487321bc3e576f377e6f01236a1bbb
+context: 00000100010003049904661176dd864002718fee7b491330d54f45bd37172b6
+b9ae8038cce88b9f9fad47829699477de2fb014827b4a8e7f1e4a870304aad3d7986d68d
+35cd07ff60441aa0ed8d749bab7f9a2ed9515ea60ad5b5cace45710f4ce6bf99bb44a106
+9d8a9c12ef2f514fb1c9185c8db167c821b2aeb38d1f821ba1164101c85ede7ee1300000
+000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000e3b0c44298fc1c149af
+bf4c8996fb92427ae41e4649b934ca495991b7852b85555c4040629c64c5efec2f723040
+7d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 15a36bf657d3b3b4eb355d6bf2a595f710e4a4da37d2710964167ba8029227ee
+key: fe8f6e7d61f81dc4cce9b185b4343323dcf7eaab8c2ac36239b2a9274c198868
+nonce: e61fbe136571b0fa5753e51d
+</pre><a href="#section-a.5.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-4">
+<section id="section-a.5.1.1">
+            <h4 id="name-encryptions-5">
+<a href="#section-a.5.1.1" class="section-number selfRef">A.5.1.1. </a><a href="#name-encryptions-5" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.5.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: e61fbe136571b0fa5753e51d
+ciphertext: 8ca64a2de7e35f68444f4fbad9fad274e98515250c46602a775943efc0b7
+9ce216005b465620050e465833dce0
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: e61fbe136571b0fa5753e51c
+ciphertext: 8c04a6d97f1b43b20b6431ebe5379a3b8fc44bafb74a1d7766c9299fb36d
+2f2335321115f550d30a9eabe368fa
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: e61fbe136571b0fa5753e51f
+ciphertext: c14f9a30f8cb66a4125a5165efd88fb3cfbf481009a0f880013d885abc44
+6c9fce029a44dd0bad9be66ae18fa1
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: e61fbe136571b0fa5753e519
+ciphertext: 221884f4ff14f3386e6bfb00f0179bba99da2c5a6a3867078b11fdea39c4
+7f088dbdc8f271c842e97f6d048c71
+
+</pre><a href="#section-a.5.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-256-hkdf-sha256-chacha20poly1305-1">
+<section id="section-a.6">
+        <h2 id="name-dhkemp-256-hkdf-sha256-chach">
+<a href="#section-a.6" class="section-number selfRef">A.6. </a><a href="#name-dhkemp-256-hkdf-sha256-chach" class="section-name selfRef">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a>
+        </h2>
+<div id="psk-setup-information-1">
+<section id="section-a.6.1">
+          <h3 id="name-psk-setup-information-2">
+<a href="#section-a.6.1" class="section-number selfRef">A.6.1. </a><a href="#name-psk-setup-information-2" class="section-name selfRef">PSK Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.6.1-1">
+<pre>
+mode: 1
+kemID: 1
+kdfID: 1
+aeadID: 3
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 3dc6dc4839c96a68f1a126261a1d6cc31960e3891266ca5793c17fc7c739ec26
+skS: a5d6e4cc2f531cd23ca6828a1a2b540f93c40784cbb347fc4b7765beea6d2f51
+skE: aba85f04d1cbf29d01d4303378e9e845f182f98d71cda4e7715c9644ab297d15
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 0466daf2d7e1fa5db08c5c9e176b021f05fb00e39b83248caa25fe098556a7af09e
+7107db9259d1c0fc3055863277d830e04022653e543fe9ae5dc48940dd21dad
+pkS: 0483d9931c6593bc2099ccbebd36609be5ef89ae4cba94270802e318a5f2619cddc
+ac5ba077192db6c834cbcc891f6200ad39dcbd4fbd8acc4e25817d7a10d316c
+pkE: 0418234cb6d16fe20481c2ff80140aa3ffe84f2afb6be64645ecc16b76e0be3dbfc
+997b53765a3e58a555752063bfbf7fd86bf6b3a72cb65923818114e9a740348
+enc: 0418234cb6d16fe20481c2ff80140aa3ffe84f2afb6be64645ecc16b76e0be3dbfc
+997b53765a3e58a555752063bfbf7fd86bf6b3a72cb65923818114e9a740348
+zz: 1bddb02ead402b3f293503475d98cfedfa1b00b9d41e4b13ea01c2d4df9652b9
+context: 010001000100030418234cb6d16fe20481c2ff80140aa3ffe84f2afb6be6464
+5ecc16b76e0be3dbfc997b53765a3e58a555752063bfbf7fd86bf6b3a72cb65923818114
+e9a7403480466daf2d7e1fa5db08c5c9e176b021f05fb00e39b83248caa25fe098556a7a
+f09e7107db9259d1c0fc3055863277d830e04022653e543fe9ae5dc48940dd21dad00000
+000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000eca994d516108a16db8
+6e155390f3c3cec6f0aff60ade1ae9e3189140b0f3dea55c4040629c64c5efec2f723040
+7d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 18e7dd273976a38568a1d97d01a0f68ced4b1e680629abb6c147976be2c9a68e
+key: b0b09b57b888ab7f5ff36c301bbecf73a10c952f3089b298969894bdb6ec092c
+nonce: 293fb9ecc6499ab799f74aba
+</pre><a href="#section-a.6.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-5">
+<section id="section-a.6.1.1">
+            <h4 id="name-encryptions-6">
+<a href="#section-a.6.1.1" class="section-number selfRef">A.6.1.1. </a><a href="#name-encryptions-6" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.6.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 293fb9ecc6499ab799f74aba
+ciphertext: eb9679b0cbcba88710858b834d40b320afc2f8b8623cba8eaa198269c02b
+3d0649724b93ed9fcb34f98ac91659
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 293fb9ecc6499ab799f74abb
+ciphertext: 75e4cf4add98bf9804456210fd623be7911594f91a98f24559e8e9203b4a
+be932913bf9d530e83797d430b0adf
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 293fb9ecc6499ab799f74ab8
+ciphertext: 43ba4f906914636f47c6a80059e0924db44c2a747af0a4432b476883f2a6
+bdc9843538902706188804fa98eeb4
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 293fb9ecc6499ab799f74abe
+ciphertext: 3a2cc9fd2ce341bff18b3a55949afca1ad73faf18e6d331fa37a467dbef1
+5696b2fea0228808f7bc121ee2b2e3
+
+</pre><a href="#section-a.6.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-256-hkdf-sha256-chacha20poly1305-2">
+<section id="section-a.7">
+        <h2 id="name-dhkemp-256-hkdf-sha256-chacha">
+<a href="#section-a.7" class="section-number selfRef">A.7. </a><a href="#name-dhkemp-256-hkdf-sha256-chacha" class="section-name selfRef">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a>
+        </h2>
+<div id="auth-setup-information-1">
+<section id="section-a.7.1">
+          <h3 id="name-auth-setup-information-2">
+<a href="#section-a.7.1" class="section-number selfRef">A.7.1. </a><a href="#name-auth-setup-information-2" class="section-name selfRef">Auth Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.7.1-1">
+<pre>
+mode: 2
+kemID: 1
+kdfID: 1
+aeadID: 3
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 8cc7881e1438783080f4422f9716929a5d7406bf3eda38ef26298ac1574d38c8
+skS: e82f5350eea923aced4a03c5d37da628dd9629f3b4a9c0d69f1eeb0adade6c34
+skE: f12bb99fb1adac970c60b1a9e747e0da787b2dbebb9e22a6c9335b1e8944d106
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 04fcb0c3c6335bc9ef4aaa4e60b2db6ad10dfcce8d27512193cb119b6b71ec8fad6
+ac7ccd8c3ce24b05c0e4670461b9968358d1902e1282fd20824928055c63064
+pkS: 04a65c3735ebb9d5dd9de125e1a2e0ade33eb590c578e53308412ba444e091c8f4d
+db45d965527a7e99ee21cbf35517b3c8b75d2c333623aeab1deef5ef7c0b21a
+pkE: 04bae2436aa78ceb08481b3fd7f9104921a84cb1412a9b377db0e333225659b08ce
+ac43adc28ba392db9f3a0c2fbaae6fe6b9fef4edcff240ff0b6dfcab383ab31
+enc: 04bae2436aa78ceb08481b3fd7f9104921a84cb1412a9b377db0e333225659b08ce
+ac43adc28ba392db9f3a0c2fbaae6fe6b9fef4edcff240ff0b6dfcab383ab31
+zz: cca4949b43cc9d846e9c17398b3395ab6a268e2f5d733139cd76e2adfc0673874a77
+d07c7f2b8b760fc1b6547ebe68b272617a80158ac04fc07398fdef69fe84
+context: 0200010001000304bae2436aa78ceb08481b3fd7f9104921a84cb1412a9b377
+db0e333225659b08ceac43adc28ba392db9f3a0c2fbaae6fe6b9fef4edcff240ff0b6dfc
+ab383ab3104fcb0c3c6335bc9ef4aaa4e60b2db6ad10dfcce8d27512193cb119b6b71ec8
+fad6ac7ccd8c3ce24b05c0e4670461b9968358d1902e1282fd20824928055c6306404a65
+c3735ebb9d5dd9de125e1a2e0ade33eb590c578e53308412ba444e091c8f4ddb45d96552
+7a7e99ee21cbf35517b3c8b75d2c333623aeab1deef5ef7c0b21ae3b0c44298fc1c149af
+bf4c8996fb92427ae41e4649b934ca495991b7852b85555c4040629c64c5efec2f723040
+7d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 614c395e97b3cfb0226a77e9c4095130853c93df9c4f4dec117f7b0204264905
+key: e23b412870ea8ce4d178df789d5cf6a4b3f2df9d5b1e9580c95696393d9db28d
+nonce: 6a6049cb5c7765a88960c320
+</pre><a href="#section-a.7.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-6">
+<section id="section-a.7.1.1">
+            <h4 id="name-encryptions-7">
+<a href="#section-a.7.1.1" class="section-number selfRef">A.7.1.1. </a><a href="#name-encryptions-7" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.7.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 6a6049cb5c7765a88960c320
+ciphertext: 711137546af6a7c7f6a0f04e882fdd7efa097a5ccf8739294bca3439d999
+403302a18dd67052860e9fcb30cf94
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 6a6049cb5c7765a88960c321
+ciphertext: c68307a9594d7fb230973fb4be22ef9a7c43ccf65d5dc2cde3961893cf27
+5985872ee89f692dddeed07c36cec3
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 6a6049cb5c7765a88960c322
+ciphertext: 7e25d6df95d22f98f2fb46fccc64411d36c1608d6d858c52d58d09520917
+ddb83555dbaab0479dbf0375577937
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 6a6049cb5c7765a88960c324
+ciphertext: 71adc526725cb8bec5c149a81da7cdd57ea5a342437dd937514ed4332f4c
+e641c8095cf87a21cf53fdbb6ae89b
+
+</pre><a href="#section-a.7.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-256-hkdf-sha256-chacha20poly1305-3">
+<section id="section-a.8">
+        <h2 id="name-dhkemp-256-hkdf-sha256-chacha2">
+<a href="#section-a.8" class="section-number selfRef">A.8. </a><a href="#name-dhkemp-256-hkdf-sha256-chacha2" class="section-name selfRef">DHKEM(P-256), HKDF-SHA256, ChaCha20Poly1305</a>
+        </h2>
+<div id="authpsk-setup-information-1">
+<section id="section-a.8.1">
+          <h3 id="name-authpsk-setup-information-2">
+<a href="#section-a.8.1" class="section-number selfRef">A.8.1. </a><a href="#name-authpsk-setup-information-2" class="section-name selfRef">AuthPSK Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.8.1-1">
+<pre>
+mode: 3
+kemID: 1
+kdfID: 1
+aeadID: 3
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: d1f7d55e5de14783636f2d14d71a1c860f0dbd1aeef7fe39b0b701f515501f70
+skS: bb6283dd44d7f974ba50086eaf16d272c20ca2e15c392502e444cf9083a5af15
+skE: 80c2f6d99d0bc54d0b3b3ed549f9137c8ebe4996d6686b26fa7d9214adee3062
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 040ae36ea457a2df295dfc4272e49b4c3ce80ac2f73a1abd42ff25c9446972062d0
+33b99c12f9a122abd1d6456914888fdbd2e5080edd254e523bf00cd48df563b
+pkS: 043763d914a4b95237039c08d960efc3c7381ca228ce8e3d945ba4f68c5c44b07c5
+46ace52dbc663f644d5d917fb02e7f25d7711855d1396aca7a53a593cf2cd23
+pkE: 048f5c15b3888c03ffbccf3b69a225ccf389c5f078f81adf38aee5f2f6d8dfb693c
+a56dad6db4fb6dd32908cb3031f735d911b0d08fb79b0ace7b99ddc16d1ea3f
+enc: 048f5c15b3888c03ffbccf3b69a225ccf389c5f078f81adf38aee5f2f6d8dfb693c
+a56dad6db4fb6dd32908cb3031f735d911b0d08fb79b0ace7b99ddc16d1ea3f
+zz: 23d0dbdfd32a8bfdb2cecb239698eb28a797f7173c5885db4d461ecdc7cf55a2efa5
+6c4a977fd6fcae64bec282df44e572925274290c2c3ed31e66abfcc5d10b
+context: 03000100010003048f5c15b3888c03ffbccf3b69a225ccf389c5f078f81adf3
+8aee5f2f6d8dfb693ca56dad6db4fb6dd32908cb3031f735d911b0d08fb79b0ace7b99dd
+c16d1ea3f040ae36ea457a2df295dfc4272e49b4c3ce80ac2f73a1abd42ff25c94469720
+62d033b99c12f9a122abd1d6456914888fdbd2e5080edd254e523bf00cd48df563b04376
+3d914a4b95237039c08d960efc3c7381ca228ce8e3d945ba4f68c5c44b07c546ace52dbc
+663f644d5d917fb02e7f25d7711855d1396aca7a53a593cf2cd23eca994d516108a16db8
+6e155390f3c3cec6f0aff60ade1ae9e3189140b0f3dea55c4040629c64c5efec2f723040
+7d612d16289d7c5d7afcf9340280abd2de1ab
+secret: 077842bdbb03e46cfec2c1b5d89a6d22e4fc009ceb9dbb1d0f361f635ea36c22
+key: 8d0e8ea21988d7eed10e5b4addba4f0865cd36f87c24181121703eb88961ef2a
+nonce: 83af2565d56b585c5380ed11
+</pre><a href="#section-a.8.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-7">
+<section id="section-a.8.1.1">
+            <h4 id="name-encryptions-8">
+<a href="#section-a.8.1.1" class="section-number selfRef">A.8.1.1. </a><a href="#name-encryptions-8" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.8.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 83af2565d56b585c5380ed11
+ciphertext: 672a957e804272b9ffb44f180ab8691b786f230cf54c79ebb92d525b082b
+134b9482febda1fb1b397a63687c9b
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 83af2565d56b585c5380ed10
+ciphertext: c0d1ed854dd5c07fad5f5c1a434e30cac8bf5a4d15486d8dd11e45e7244b
+bd66a35ceed694feaae8a543afbee5
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 83af2565d56b585c5380ed13
+ciphertext: 3570fcc7f96bebffc27d43f699226c4460f2299d6b03a165b07c94bb5677
+6e60d0ff84c38e6fa8f3503c361816
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 83af2565d56b585c5380ed15
+ciphertext: 8ea25c2e1e93441779fce40df6b0f88664d1953a250fc9c531bc1dc9b630
+39c6061f181e685efb0ed413a0f589
+
+</pre><a href="#section-a.8.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-521-hkdf-sha512-aes-gcm-256">
+<section id="section-a.9">
+        <h2 id="name-dhkemp-521-hkdf-sha512-aes-">
+<a href="#section-a.9" class="section-number selfRef">A.9. </a><a href="#name-dhkemp-521-hkdf-sha512-aes-" class="section-name selfRef">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a>
+        </h2>
+<div id="base-setup-information-2">
+<section id="section-a.9.1">
+          <h3 id="name-base-setup-information-3">
+<a href="#section-a.9.1" class="section-number selfRef">A.9.1. </a><a href="#name-base-setup-information-3" class="section-name selfRef">Base Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.9.1-1">
+<pre>
+mode: 0
+kemID: 3
+kdfID: 2
+aeadID: 2
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 01cf7db2e78823889fa5c7f45ff20c845e9c870861ba51cef7f6546ec7baa4d60cb
+db3586dae794bc7d4d9c6cb54409be24624f30c745c75244316a1a9953254c6f1
+skS: 009ad3116e7c9d3e09eab465eeae0712c29498d6c5a8b144410aa1ad3f19942f88b
+9ef89f77c33b14fd4bc23cab7e4154b1702d441d872d07fed197f10e6f29c6c82
+skE: 012bbe591757f8aa4e5640297ea45b669ba14ac5047d04d0ed136f74512ba916149
+b3bef43d64bc2e47e17ae9c9937dad167dd214c6aaf4a60c38140a9bfbf67f3ec
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 04003ff813033df935e1ad38eb47258b8f5634fb491437b82b17563d5910117f1b5
+193bb7be71fb8413cae9d538cbc9dacf792864941ceaa588cef0dbbf27e81495430014cc
+f9aca4bb88f6a416ca3339579b29a038c2124b2f9dfc9b306eb57b77961d6ad444daf3a7
+9be9088ff28624781cb93a87d3873f7d6ae11ca2195b0cdda5c6ed8
+pkS: 0400630359fc1cbb8257504d8a3242538558a82b0c826a29fe95f8ebdc0857067c7
+7c0f8cc8dda2e98f3313444a5efda1ecfd47d5da68fe2ef26f729de47cff529dfc000a66
+ef90d5a1d0640a61d49c614336e1734142d3586db9c2dde39a0f5269f62e533e8763f9e9
+cd727df3c7256224babcdffd5d18d0cbfeeb7e916cfff9f68cb02a3
+pkE: 040025938c1a2d444a8dfc093f8e8d8c23a8269292bb89e1852e8298f8b97f86cc8
+f5f21a3bf038916ccd164328fcdf34d06ba0f574c1899866d489e61c2c81aee071501037
+45a8d7034287fa0c8051d499a60ce53844ecbdf088d14ff4bf3e53c12ad4182edf062103
+d67bfb722c9d24e0d3b23925b8e819006dfb1eeb0d2390265b25a4c
+enc: 040025938c1a2d444a8dfc093f8e8d8c23a8269292bb89e1852e8298f8b97f86cc8
+f5f21a3bf038916ccd164328fcdf34d06ba0f574c1899866d489e61c2c81aee071501037
+45a8d7034287fa0c8051d499a60ce53844ecbdf088d14ff4bf3e53c12ad4182edf062103
+d67bfb722c9d24e0d3b23925b8e819006dfb1eeb0d2390265b25a4c
+zz: 007a7d4668515bc876fc67d936e1e4f76ae576c50207eaafd6cef8bc9153d97115e5
+5233cd67fbaa62f04452b959617e7a3bbd52239f5a3dfce6a8b7a89e52faec33
+context: 00000300020002040025938c1a2d444a8dfc093f8e8d8c23a8269292bb89e18
+52e8298f8b97f86cc8f5f21a3bf038916ccd164328fcdf34d06ba0f574c1899866d489e6
+1c2c81aee07150103745a8d7034287fa0c8051d499a60ce53844ecbdf088d14ff4bf3e53
+c12ad4182edf062103d67bfb722c9d24e0d3b23925b8e819006dfb1eeb0d2390265b25a4
+c04003ff813033df935e1ad38eb47258b8f5634fb491437b82b17563d5910117f1b5193b
+b7be71fb8413cae9d538cbc9dacf792864941ceaa588cef0dbbf27e81495430014ccf9ac
+a4bb88f6a416ca3339579b29a038c2124b2f9dfc9b306eb57b77961d6ad444daf3a79be9
+088ff28624781cb93a87d3873f7d6ae11ca2195b0cdda5c6ed8000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000cf83e1357eefb8bdf1542850d66d8007d620e4050b5
+715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a53
+8327af927da3e490ce9df289fea4615a6eef004e5cec7a77f0f0478e663643a1ab75945a
+0082e5b91ad84905c1632605d8377ed3d2cb688cf352d67466c37bfaa08c8c765077b
+secret: 4770a7d95b1a0326e5fae35e1d3434fcfacca6c0dacbbf9cc7d1d6c983e146bb
+5396b6fe3c699004b33e49c8077ca672a6f0c0666d6ed9c2bb32ad708ce04a4f
+key: 4ecae7e036312dafda581ff13ca74aa62c564116f50e1125d1bfbd134e1f66dc
+nonce: 594baa22942e8a065e8183f0
+</pre><a href="#section-a.9.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-8">
+<section id="section-a.9.1.1">
+            <h4 id="name-encryptions-9">
+<a href="#section-a.9.1.1" class="section-number selfRef">A.9.1.1. </a><a href="#name-encryptions-9" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.9.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 594baa22942e8a065e8183f0
+ciphertext: be580294672fd350dcb8da1b9246821407c4b02e32efae0150ef6eb76a97
+0b6c0cb2b2a594a9719ee6e3ef0549
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 594baa22942e8a065e8183f1
+ciphertext: f97e0702b831062499dcb56fa4dbdd7725dd0a4afc8338d0f61c6daf7fd1
+1bb1b4d2009d4d40abcd1d3170050c
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 594baa22942e8a065e8183f2
+ciphertext: 5e68db84fc05d2c3b137588bc54a5fc374e4c27827b2c1c7e555cce29507
+84be624a0631285c7a3a05f1ca517b
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 594baa22942e8a065e8183f4
+ciphertext: b682800ccd28b82fa7f15275647b3a1c0998e46a5be5772071a4865ce0be
+e99631fa62afc130f2e1fe8fc225c7
+
+</pre><a href="#section-a.9.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-521-hkdf-sha512-aes-gcm-256-1">
+<section id="section-a.10">
+        <h2 id="name-dhkemp-521-hkdf-sha512-aes-g">
+<a href="#section-a.10" class="section-number selfRef">A.10. </a><a href="#name-dhkemp-521-hkdf-sha512-aes-g" class="section-name selfRef">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a>
+        </h2>
+<div id="psk-setup-information-2">
+<section id="section-a.10.1">
+          <h3 id="name-psk-setup-information-3">
+<a href="#section-a.10.1" class="section-number selfRef">A.10.1. </a><a href="#name-psk-setup-information-3" class="section-name selfRef">PSK Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.10.1-1">
+<pre>
+mode: 1
+kemID: 3
+kdfID: 2
+aeadID: 2
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 01244fd7a0d476f49b7450267d272ec0f34c6a46e817df3cea2953e01fc43851a40
+d73e07bc3a36faaa7ee39505dc451eb68e86a4f6716e02f4dc10296e1bb3a9252
+skS: 01b61d8ec4cddae3fa76d941b05587b0a5afe0323ff8d7086178e4b4dbd2bfe07e8
+3299fd8a232e8ba07b608b32907a626b4bc054b0b7d7bb56c7b7f7b4b9728c808
+skE: 016c462ff76d276265231671f9df46cf2ae4b621f3f0e842ec15f6063ff841a0194
+24ce5c39ddee352b0cc15cf2782b9b7aad0c3f5091d324c43de608c2464d4ef2e
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 0400606978b77a55730536aabb3ff81b596466b1f0ecfe13c6a9c4f9633cb99662a
+63019387cfca443c0d342b7e0b580dd88e226daa5c50ce0ee7fcd4d545f90868a6300746
+fbdda2b4402c315b8b62b4d4aa9b4f9f818107c3bb5b4d4f536c6245f4f061c5dffadbc4
+ff38c6b6577962993fc0859f5beeff052f63b94b93703d599bac13e
+pkS: 04008b2f8d9d12b888774f70ee6722025ebd0061910cac04d6b447879dd2170c176
+39a20cdff247560af7ff8a1cd7767de74fe5712cb18197171d14b8e4a030c0edb190199a
+5fcdb5b15e036e9989eab241b050257de70bc963221dbbdd054dfac2f6557248ba14c635
+a5de2a8b06b6ca54182fb6c065b0ddaeb157104ef78a5e1dcb97640
+pkE: 0401464b59282a6b88623ee6449b1132a252bc7be17d59e6731c69f4ede2ff357b6
+8e973f528ad45e087745642a06fd7e6292a7b182860ecdcf10eb6cbe0ec347ed07801f49
+1c84614cb63ec0e5dd6ab8f4f52906b8126f8813682db6365dc7101c4069823ecffa5c80
+b5b2e62f2c66706195b65ec415f6d64dab4cb716885a7c0945a071b
+enc: 0401464b59282a6b88623ee6449b1132a252bc7be17d59e6731c69f4ede2ff357b6
+8e973f528ad45e087745642a06fd7e6292a7b182860ecdcf10eb6cbe0ec347ed07801f49
+1c84614cb63ec0e5dd6ab8f4f52906b8126f8813682db6365dc7101c4069823ecffa5c80
+b5b2e62f2c66706195b65ec415f6d64dab4cb716885a7c0945a071b
+zz: 01d325aaa842b0d08c52203e3de519f5822a91a4fb6b84f7a22bdbaa58738a8b0c60
+578c76fda19a9dbfd8bdcebf5885d80723ca6eb512738b40e166ac234bab931c
+context: 010003000200020401464b59282a6b88623ee6449b1132a252bc7be17d59e67
+31c69f4ede2ff357b68e973f528ad45e087745642a06fd7e6292a7b182860ecdcf10eb6c
+be0ec347ed07801f491c84614cb63ec0e5dd6ab8f4f52906b8126f8813682db6365dc710
+1c4069823ecffa5c80b5b2e62f2c66706195b65ec415f6d64dab4cb716885a7c0945a071
+b0400606978b77a55730536aabb3ff81b596466b1f0ecfe13c6a9c4f9633cb99662a6301
+9387cfca443c0d342b7e0b580dd88e226daa5c50ce0ee7fcd4d545f90868a6300746fbdd
+a2b4402c315b8b62b4d4aa9b4f9f818107c3bb5b4d4f536c6245f4f061c5dffadbc4ff38
+c6b6577962993fc0859f5beeff052f63b94b93703d599bac13e000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000f19e7afbe93b9d8b9837fe0a40ada462caf9a031824
+8f66dd7832fac65a58dcacbf170937f825b35d22fd19125483b1f2f6993549423617d8ab
+9f65322d627b6490ce9df289fea4615a6eef004e5cec7a77f0f0478e663643a1ab75945a
+0082e5b91ad84905c1632605d8377ed3d2cb688cf352d67466c37bfaa08c8c765077b
+secret: a2ff54181b5c15413a7ead08e580b0c079bfadbfd0ec947b12df653783bb826e
+04e1b078bbf7624756dfab4248b662f652eef613e70b2f8da7416c40d652e050
+key: 24065fd86a68c21bcd1f69eea7d9624f15d3778f0c96c2ff8a03c04d8b5e6846
+nonce: 51fb39ad98f3a339a26a764e
+</pre><a href="#section-a.10.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-9">
+<section id="section-a.10.1.1">
+            <h4 id="name-encryptions-10">
+<a href="#section-a.10.1.1" class="section-number selfRef">A.10.1.1. </a><a href="#name-encryptions-10" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.10.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 51fb39ad98f3a339a26a764e
+ciphertext: 9411c8988f7336d65b934ad5edea81b657f341d1f1e5d41bb05fa19903d2
+1f4c7f3f6462a0c5fbcaab67020efc
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 51fb39ad98f3a339a26a764f
+ciphertext: d8c98f96bd510b91c120a517fcac300cee5af2eaf3478cf08b06279c12fb
+46acde7f83012f0134f0329132217a
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 51fb39ad98f3a339a26a764c
+ciphertext: 361e7edb6a1192913e60b30fc058ae2d2af118503a6c053b956e4259ffd0
+64b7bdbbe4451e74528b14f15bd44f
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 51fb39ad98f3a339a26a764a
+ciphertext: 1e392fcdf179a034b0bb34062fa359dab4bde3093600d7739f0b30d31b0b
+6f831c6440c8102eb5a683cb78dde5
+
+</pre><a href="#section-a.10.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-521-hkdf-sha512-aes-gcm-256-2">
+<section id="section-a.11">
+        <h2 id="name-dhkemp-521-hkdf-sha512-aes-gc">
+<a href="#section-a.11" class="section-number selfRef">A.11. </a><a href="#name-dhkemp-521-hkdf-sha512-aes-gc" class="section-name selfRef">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a>
+        </h2>
+<div id="auth-setup-information-2">
+<section id="section-a.11.1">
+          <h3 id="name-auth-setup-information-3">
+<a href="#section-a.11.1" class="section-number selfRef">A.11.1. </a><a href="#name-auth-setup-information-3" class="section-name selfRef">Auth Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.11.1-1">
+<pre>
+mode: 2
+kemID: 3
+kdfID: 2
+aeadID: 2
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 0167e7922fb57fe3a23622c078e92353a1108e6bfadbd977455db6a0bbf61f42ea4
+6b880d138a95e14c3aaa1fb8625229990e275126e00f1fb49aaad09e18fe097df
+skS: 01c1b5c8c23e3c076ad3ff2334981aea232aeeb884498c9b50140e425c3fb98bc4c
+1a37368596ea2183e48cc5f948bdd53eab21eb475494907dcffbadcde086afb9b
+skE: 0064ce1aab784114ca4e8da89951b72ddb688a8f38d49fbede30acc8b48f16bb80f
+1ccc2e5d4079988b23c8042ee1f971789562affd99c7a09044c2f4499553f3c78
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 0401f99b3daeec2adb4d9dc34fe981c761083890a9c446c1debbfffca9c35db09e6
+78c03d5c062b13854151034d65e121123a6eb1e5f2e475ac78e13c56121a0fbe43801c6c
+fc7b845f902d2a036aa89dfbd3c1ae148f278b71f83d68bc9cc4ee65e43c484f19456663
+ac3f04c1d824b4dd0edce454b36d933235f6025968468ec53bcb275
+pkS: 0400b04e91f3a4ae9ca6de1d1df6642685100b87d667c39bb39ef49c5b8da5ca33c
+d54ce4a3fda1cc02295f501d21ff858f005731288b5095a0a9ea18e468890ae3f1a00b5f
+b6a0b5ad28e0bb9285f86adc92e4764cf71da57cfc9315b9c661176b2f5248b9bea5ca66
+f2edfb422a755795d9f2ff91e9d36c3e1996de867c8f151c13ced3d
+pkE: 04019290abae722dd3a5dc603c3baec5275a7490fd85d779132dd00fbe5876bece2
+d8ae51aab0ebd48ed43e0e017316be0c6e1e8290589b59c17670979586e6fea2ee300467
+d9d8c8fe93da9961d25e569cb87937666bf4abdf9493edb14b2c64e41d7b4b695f63f940
+f51c9f8b8921f713575978140cadcae55f78175fb14fd6dbfa7bcb0
+enc: 04019290abae722dd3a5dc603c3baec5275a7490fd85d779132dd00fbe5876bece2
+d8ae51aab0ebd48ed43e0e017316be0c6e1e8290589b59c17670979586e6fea2ee300467
+d9d8c8fe93da9961d25e569cb87937666bf4abdf9493edb14b2c64e41d7b4b695f63f940
+f51c9f8b8921f713575978140cadcae55f78175fb14fd6dbfa7bcb0
+zz: 002ae310e807be1850299dd1bc9e606de09ccf62eed02abd88793fcdf22e2008cf55
+80108cbe9c5d4f813e5f560bfc4964c2d932700833ccf4af6eb4454457d1ffa70153c4d1
+23d448a732603b37a84ec20cae6387477f0005e9024a29b20843dadb7843c198c2688532
+3335e6335496e12aa522490ad3cba3744fe848b0357292f657ad
+context: 0200030002000204019290abae722dd3a5dc603c3baec5275a7490fd85d7791
+32dd00fbe5876bece2d8ae51aab0ebd48ed43e0e017316be0c6e1e8290589b59c1767097
+9586e6fea2ee300467d9d8c8fe93da9961d25e569cb87937666bf4abdf9493edb14b2c64
+e41d7b4b695f63f940f51c9f8b8921f713575978140cadcae55f78175fb14fd6dbfa7bcb
+00401f99b3daeec2adb4d9dc34fe981c761083890a9c446c1debbfffca9c35db09e678c0
+3d5c062b13854151034d65e121123a6eb1e5f2e475ac78e13c56121a0fbe43801c6cfc7b
+845f902d2a036aa89dfbd3c1ae148f278b71f83d68bc9cc4ee65e43c484f19456663ac3f
+04c1d824b4dd0edce454b36d933235f6025968468ec53bcb2750400b04e91f3a4ae9ca6d
+e1d1df6642685100b87d667c39bb39ef49c5b8da5ca33cd54ce4a3fda1cc02295f501d21
+ff858f005731288b5095a0a9ea18e468890ae3f1a00b5fb6a0b5ad28e0bb9285f86adc92
+e4764cf71da57cfc9315b9c661176b2f5248b9bea5ca66f2edfb422a755795d9f2ff91e9
+d36c3e1996de867c8f151c13ced3dcf83e1357eefb8bdf1542850d66d8007d620e4050b5
+715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a53
+8327af927da3e490ce9df289fea4615a6eef004e5cec7a77f0f0478e663643a1ab75945a
+0082e5b91ad84905c1632605d8377ed3d2cb688cf352d67466c37bfaa08c8c765077b
+secret: 5b6235bd3622027add71cf60f17b7673541ecb2bbe49085baf10ebe89134ab64
+11bd0b75b4621ce47dcd1649700c2903eb5629edd18ee585245123cb2c450b69
+key: d81f29eae626b1d6de7684dcf8bf9a385155836eb6cc8cfa39f4ac790948967e
+nonce: ca84d6c140a4f270e9af08ec
+</pre><a href="#section-a.11.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-10">
+<section id="section-a.11.1.1">
+            <h4 id="name-encryptions-11">
+<a href="#section-a.11.1.1" class="section-number selfRef">A.11.1.1. </a><a href="#name-encryptions-11" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.11.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: ca84d6c140a4f270e9af08ec
+ciphertext: e93a30618031c82fb2f2396e56eac0d6ccb7d8f9ade21e8fadbd5f994b71
+4975e9d4a3b58d2c768f51d4d5f0cd
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: ca84d6c140a4f270e9af08ed
+ciphertext: 3738ec9417ac07e1e1c9ee6d0722d74972ed3c3020a5b44b495ecf576e95
+0291d06d0f0f73bb6844831f130ed4
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: ca84d6c140a4f270e9af08ee
+ciphertext: 49bc86ef2ff0653da3a1099b15efd56aacfa80361c819ea82e1eca24a657
+69dd67982ab0467e6574907a0e1d73
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: ca84d6c140a4f270e9af08e8
+ciphertext: 65d227ce7b5acd1038bfbcf85ecdc042e2531195c49c37dc74eec2c2d3f3
+cf036adb4bfbac222267748263eb4f
+
+</pre><a href="#section-a.11.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="dhkemp-521-hkdf-sha512-aes-gcm-256-3">
+<section id="section-a.12">
+        <h2 id="name-dhkemp-521-hkdf-sha512-aes-gcm">
+<a href="#section-a.12" class="section-number selfRef">A.12. </a><a href="#name-dhkemp-521-hkdf-sha512-aes-gcm" class="section-name selfRef">DHKEM(P-521), HKDF-SHA512, AES-GCM-256</a>
+        </h2>
+<div id="authpsk-setup-information-2">
+<section id="section-a.12.1">
+          <h3 id="name-authpsk-setup-information-3">
+<a href="#section-a.12.1" class="section-number selfRef">A.12.1. </a><a href="#name-authpsk-setup-information-3" class="section-name selfRef">AuthPSK Setup Information</a>
+          </h3>
+<div class="artwork art-text alignLeft" id="section-a.12.1-1">
+<pre>
+mode: 3
+kemID: 3
+kdfID: 2
+aeadID: 2
+info: 4f6465206f6e2061204772656369616e2055726e
+skR: 018ff7b8d424aaf0ed811739a1980fbac4a4a788d856951b30252ecf87bf4786f6a
+a517c5871a41b418b815e5c7a764e43288a0e398cafb1a11f84ddae80f1fc6eae
+skS: 001c70b0b9c82580dd9ffb1686a4c1ce8d5d54e669905d2bf91c6e40b81605bae50
+9d22a262435100f2da38a40094bdaabd88ec9a548100274108c0549aa88f0647f
+skE: 01c2e688a75c6f16702a9053d5fddc6ed0b848ebc19a7312ec6d995d8537c0480e9
+5bad4886c152cd156777af7b9d2b915ea017668fb462d3cb777a83ba5fb3cc941
+psk: 3564623362383061383163623633636135393437306338333431346566373061633
+1636338303636333964303133353738343937343061303364616464666339
+pskID: 456e6e796e20447572696e206172616e204d6f726961
+pkR: 040073825b5a6284f6e024a1d1fb192645e8af25e62f95f72d62ff36dc8ed4de4c5
+5d3dc48fbb3cb747c766b024f03fd9cb0f70bfe08529389e18d4a26fa62c1124e3e01988
+10d300f3a1ae823224013e6ab198195375c54c6df5ef6ee2de9f884735e01d0bf023e518
+e81759ed2d4c3de949b9117c39cab6186d4c8a21d6271cbf88d073c
+pkS: 04007b742d25deaf50156f092ca17b3ce582a77da2db3be658e5e8d1df40fa83ac5
+c5e5d673249d1f8cf678c4328dc09718c232850c18ff99dd87e15910b49825c321200e6b
+6cd8010792f5be0c01079a87ca1abc03a9567674a034436a5fd7cc6ecf6ea54c92d1ef0a
+240f1e407348f69cda753f7b6ed24ede658391612c1c56c778f5ac4
+pkE: 0400e6201790d044da8ec517fc3b427e8f45039dcf45268b1b542e944e9aa30c8d8
+0efd5b5336ae3a8cc5954d3cfe6f8fc245b9de6dae80d0976568f3018e5e55c572700c0d
+399df6f437ed1a002100da5fee7ecbe22f457e296ea896f160b3d8240c7c4ff8b32f9712
+2be011bc7d896e76a1ace94347f2260db92e64d523578b96c1f93f4
+enc: 0400e6201790d044da8ec517fc3b427e8f45039dcf45268b1b542e944e9aa30c8d8
+0efd5b5336ae3a8cc5954d3cfe6f8fc245b9de6dae80d0976568f3018e5e55c572700c0d
+399df6f437ed1a002100da5fee7ecbe22f457e296ea896f160b3d8240c7c4ff8b32f9712
+2be011bc7d896e76a1ace94347f2260db92e64d523578b96c1f93f4
+zz: 01d8c0c1dd80d293c21d47b9702adb3b62822216294b5f5b1f42c80f9a520bd4388a
+4910d46faf98b6a70261165258584bf5e2e3966f89e3063e118a0ce2d15b8b910157e379
+8b86b0a6bb49caf0ab4622627652f8dde2ac7eab1a517a02e688a47eacacae285657000e
+9cc98025d6f06ff5889ba5f9e44233d560bdb4a19c1461236dfb
+context: 030003000200020400e6201790d044da8ec517fc3b427e8f45039dcf45268b1
+b542e944e9aa30c8d80efd5b5336ae3a8cc5954d3cfe6f8fc245b9de6dae80d0976568f3
+018e5e55c572700c0d399df6f437ed1a002100da5fee7ecbe22f457e296ea896f160b3d8
+240c7c4ff8b32f97122be011bc7d896e76a1ace94347f2260db92e64d523578b96c1f93f
+4040073825b5a6284f6e024a1d1fb192645e8af25e62f95f72d62ff36dc8ed4de4c55d3d
+c48fbb3cb747c766b024f03fd9cb0f70bfe08529389e18d4a26fa62c1124e3e0198810d3
+00f3a1ae823224013e6ab198195375c54c6df5ef6ee2de9f884735e01d0bf023e518e817
+59ed2d4c3de949b9117c39cab6186d4c8a21d6271cbf88d073c04007b742d25deaf50156
+f092ca17b3ce582a77da2db3be658e5e8d1df40fa83ac5c5e5d673249d1f8cf678c4328d
+c09718c232850c18ff99dd87e15910b49825c321200e6b6cd8010792f5be0c01079a87ca
+1abc03a9567674a034436a5fd7cc6ecf6ea54c92d1ef0a240f1e407348f69cda753f7b6e
+d24ede658391612c1c56c778f5ac4f19e7afbe93b9d8b9837fe0a40ada462caf9a031824
+8f66dd7832fac65a58dcacbf170937f825b35d22fd19125483b1f2f6993549423617d8ab
+9f65322d627b6490ce9df289fea4615a6eef004e5cec7a77f0f0478e663643a1ab75945a
+0082e5b91ad84905c1632605d8377ed3d2cb688cf352d67466c37bfaa08c8c765077b
+secret: ebac42c5954a94acb80e36ad504a9ea835704cc0d6a12c54b8f8f16739e0f673
+292766c0a9178ebd5483c4b08abc80f9c496fef07fce5e580a262e5411f74cba
+key: 4a3b4976b783d37f708b3be231b4dc7d03d52ddfc4499eb2dbd74e08581c20b0
+nonce: 855531ca5f30cd5b596148be
+</pre><a href="#section-a.12.1-1" class="pilcrow">¶</a>
+</div>
+<div id="encryptions-11">
+<section id="section-a.12.1.1">
+            <h4 id="name-encryptions-12">
+<a href="#section-a.12.1.1" class="section-number selfRef">A.12.1.1. </a><a href="#name-encryptions-12" class="section-name selfRef">Encryptions</a>
+            </h4>
+<div class="artwork art-text alignLeft" id="section-a.12.1.1-1">
+<pre>
+sequence number: 0
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d30
+nonce: 855531ca5f30cd5b596148be
+ciphertext: c9883e246c7619387b29d1bd40af6b6aac0d223a5a28570b02eb86a337b7
+e09450c20d131cebeab6abd704df2b
+
+sequence number: 1
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d31
+nonce: 855531ca5f30cd5b596148bf
+ciphertext: a2e0f8a4c52f3f0de2edd67c91d8e4f36e4f8ba2eec9226e96386b784970
+b9b21e7bf1a574500e5a2254c96eb5
+
+sequence number: 2
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d32
+nonce: 855531ca5f30cd5b596148bc
+ciphertext: 2d4ea06f7c024df4bddc0b2755f115f3582edd149aaf3134870877c3cdc3
+3b1262e39402296948799835712fb9
+
+sequence number: 4
+plaintext: 4265617574792069732074727574682c20747275746820626561757479
+aad: 436f756e742d34
+nonce: 855531ca5f30cd5b596148ba
+ciphertext: ea9612bea28e4e3ecabf9194953d0c7da39ea9a7bf361d29f224b18fe053
+47408d9381d1c332b61e2e01d94191
+
+</pre><a href="#section-a.12.1.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="section-appendix.b">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Richard L. Barnes</span></div>
+<div dir="auto" class="left"><span class="org">Cisco</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:rlb@ipv.sx" class="email">rlb@ipv.sx</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Karthik Bhargavan</span></div>
+<div dir="auto" class="left"><span class="org">Inria</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:karthikeyan.bhargavan@inria.fr" class="email">karthikeyan.bhargavan@inria.fr</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
