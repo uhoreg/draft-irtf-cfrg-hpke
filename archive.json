@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-08-20T18:39:58.539835+00:00",
+  "timestamp": "2020-09-23T14:48:02.010403+00:00",
   "repo": "cfrg/draft-irtf-cfrg-hpke",
   "labels": [
     {
@@ -1725,9 +1725,31 @@
       "labels": [],
       "body": "Stephen suggested removing this [on the list](https://mailarchive.ietf.org/arch/msg/cfrg/7zhOHPFkCyZC00xLZnsEBT3o6ZU/), because\r\n\r\n> it might muddy the definition of \"signature\" for some people and doesn't seem to add much as-is.\r\n\r\nThis is a reasonable criticism. It does seem somewhat out of place and, as written, I'm not even sure it's correct (considering KCI issues for the Auth variants). \r\n\r\n@bifurcation, what do you think? Can we axe this?",
       "createdAt": "2020-08-15T13:47:00Z",
-      "updatedAt": "2020-08-15T13:47:00Z",
+      "updatedAt": "2020-08-24T14:00:58Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> > it might muddy the definition of \"signature\" for some people and doesn't seem to add much as-is.\r\n> \r\n> This is a reasonable criticism. It does seem somewhat out of place and, as written, I'm not even sure it's correct (considering KCI issues for the Auth variants).\r\n\r\nIt is right that due to the KCI issue of DHKEM, this kind of \u201csignature\u201d does not guarantee that it was produced by the sender, if the recipient's static key is compromised. So maybe it is indeed a stretch to call it a signature.",
+          "createdAt": "2020-08-24T13:46:02Z",
+          "updatedAt": "2020-08-24T13:46:02Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@blipp do you know if this proposal has been analyzed? If not, I'm going to toss up a PR removing it. ",
+          "createdAt": "2020-08-24T13:49:27Z",
+          "updatedAt": "2020-08-24T13:49:27Z"
+        },
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@chris-wood I did not analyze it, and I do not know of someone who did.",
+          "createdAt": "2020-08-24T14:00:57Z",
+          "updatedAt": "2020-08-24T14:00:57Z"
+        }
+      ]
     },
     {
       "number": 143,
@@ -1741,9 +1763,17 @@
       "labels": [],
       "body": "This was raised by Stephen [on the list](https://mailarchive.ietf.org/arch/msg/cfrg/7zhOHPFkCyZC00xLZnsEBT3o6ZU/).",
       "createdAt": "2020-08-15T13:48:07Z",
-      "updatedAt": "2020-08-15T13:48:07Z",
+      "updatedAt": "2020-08-24T13:48:28Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think it is a good idea to remove the space. It is inconsistent to have a space there but not between all the other labels we use. We need to take care to update Section \u201cInput Length Restrictions {#kdf-input-length}\u201d appropriately (increase limits by one).",
+          "createdAt": "2020-08-24T13:48:28Z",
+          "updatedAt": "2020-08-24T13:48:28Z"
+        }
+      ]
     },
     {
       "number": 144,
@@ -1757,9 +1787,17 @@
       "labels": [],
       "body": "From [his feedback on the list](https://mailarchive.ietf.org/arch/msg/cfrg/7zhOHPFkCyZC00xLZnsEBT3o6ZU/):\r\n\r\n1. p4: PGP and fiveG don't depend on HPKE, whereas msl and esni do. Maybe worth saying that.\r\n2. p5: I2OSP and OS2IP aren't expanded here - be no harm to do so\r\n3. p6: Open as the opposite of Seal, doesn't seem like the best choice - there are too many functions called open() in too many contexts. Unseal would be better IMO.\r\n4. p5: DeriveKeyPair was added after discussion in github (and maybe on the MLS list) but I don't recall any disussion of that on the CFRG list at all. Was there any? Adding this seems fine to me if MLS wants it and the definition is also almost fine (see above) so this is just a process nit.\r\n5. p5 & elsewhere: \"fixed-length\" is used in various places where it's not quite true - the various lengths are fixed only after you pick a ciphersuite - so people's code has to support different sizes (if they support >1 suite)\r\n\r\nMy take on each of these is:\r\n\r\n1. We can clarify this.\r\n2. These seem fairly common in folded form and are quite a mouthful when expanded, so I'm inclined to keep these as is.\r\n3. Open and seal seem fairly common, at least in APIs I'm familiar with (BoringSSL/OpenSSL, libsodium, NaCL, etc), so I'm inclined to keep this as is.\r\n4. I disagree about this being a process nit. The document is still an active RG document, so everything is subject to change. I'm not sure why discussion would be needed before or after it lands in the document?\r\n5. Similar to other stacks I'm familiar with, I assume memory would statically allocated for each of these fixed-length values (on the stack) based on the maximum size supported. The specific ciphersuite/length would then use however much of that memory is needed. So this seems fine to keep, though perhaps clarifying might help? I'm not sure what that would look like right now, but I'll give it some thought.",
       "createdAt": "2020-08-15T13:55:50Z",
-      "updatedAt": "2020-08-15T13:55:50Z",
+      "updatedAt": "2020-08-24T13:56:40Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "1. I agree.\r\n2. Maybe a middle ground would be to specify the parameters of the two functions? `I2OSP(int, len)` and `OS2IP(str)`. At least for I2OSP this is usefull to recall the order of the parameters.\r\n3. I haven't seen Open and Seal before, but my experience with crypto libraries is limited anyway, so I abstain.\r\n4. I am not sure how the process is supposed to be. I haven't seen many detailed discussions about decisions like this one on the full CFRG list since I am subscribed, so it seems not unusual to have these discussions off-list?\r\n5. I do not have enough experience to comment.",
+          "createdAt": "2020-08-24T13:56:40Z",
+          "updatedAt": "2020-08-24T13:56:40Z"
+        }
+      ]
     },
     {
       "number": 145,
@@ -1785,13 +1823,23 @@
       "state": "OPEN",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "chris-wood"
+      ],
       "labels": [],
       "body": "In 7.2.1, this should be 10, not 9, to match the length of the following byte array is 10:\r\n\r\n~~~\r\nsuite_id = concat(\r\n  \"HPKE\",\r\n  I2OSP(kem_id, 2),\r\n  I2OSP(kdf_id, 2),\r\n  I2OSP(aead_id, 2)\r\n)\r\n~~~",
       "createdAt": "2020-08-17T14:03:58Z",
-      "updatedAt": "2020-08-17T14:03:58Z",
+      "updatedAt": "2020-09-23T14:47:14Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "You are right, good catch. I guess the 9 is still from when it was `\"DEM\"` and not `\"HPKE\"`.",
+          "createdAt": "2020-08-24T13:59:12Z",
+          "updatedAt": "2020-08-24T13:59:12Z"
+        }
+      ]
     },
     {
       "number": 147,
@@ -1801,11 +1849,91 @@
       "state": "OPEN",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "chris-wood"
+      ],
       "labels": [],
       "body": "These values are not well-defined, and they probably should be.",
       "createdAt": "2020-08-17T14:05:35Z",
-      "updatedAt": "2020-08-17T14:05:35Z",
+      "updatedAt": "2020-09-23T14:47:15Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 152,
+      "id": "MDU6SXNzdWU2OTY3ODAxODM=",
+      "title": "Address cjpatton's feedback",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/152",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [
+        "chris-wood"
+      ],
+      "labels": [],
+      "body": "Abstract                                           \r\n                                                   \r\n\"for any combination of\" -> \"for several combinations of\"\r\n                                                   \r\nSection 4                                          \r\n                                                   \r\n\"random(Nsk)\" is used but \"random()\" isn't defined yet.  \r\n                                                   \r\n\"not passed as parameter\" -> \"not passed as a parameter\" \r\n                                                   \r\nSection 5                                          \r\n                                                   \r\n\"the holder of the private key corresponding to `pkR`\" -> \"the holder of `skR`\" \r\n                                                   \r\nIn various places, e.g., 'KeySchedule()' in Section 5.1, value \"\" is used as the\r\nsalt for KDF extraction. I'm wondering if implementations might misinterpret    \r\nthis. I read \"\" as 'the empty string', but the correct interpretation might be  \r\n'nil', i.e., 'None' in Python or 'NULL' in C. The HKDF spec defines the salt as \r\nfollows: 'optional salt value (a non-secret random value); if not provided, it  \r\nis set to a string of HashLen zeros.' I think the intention is to interpret \"\"  \r\nas 'nil', i.e., no salt, but the empty string is certainly a valid salt for\r\nHKDF, since the extraction function is well-defined on this input. A 0-length\r\nsalt might not be safe choice in terms of security, however.\r\n                                                   \r\nSection 5.2                                        \r\n                                                   \r\nI think the HPKE uses the term \"nonce\" incorrectly, since it's not a \"Number\r\nthat's used ONCE\". In fact, it's used every time the \"Seal()\" or \"Open()\"\r\noperation is run. What's called a \"nonce\" here is usually called the\r\n\"initialization vector\" elsewhere: in TLS 1.3 for example, the \"nonce\" is the\r\ninitialization vector XORed with a sequence number.    \r\n\r\n(Edit: from the list, consider renaming this to \"iv\")",
+      "createdAt": "2020-09-09T12:40:54Z",
+      "updatedAt": "2020-09-23T14:47:15Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rozbb",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Regarding the point about `\"\"` appearing with `LabeledExtract` as a salt: this is correct, and equivalent to providing a nil salt or no salt when such an API is available.\r\n\r\n[`HKDF-Extract(salt, IKM)`](https://tools.ietf.org/html/rfc5869#section-2.2) is defined to be `HMAC-Hash(salt, IKM)`. In turn, [`HMAC-Hash(K, text)`](https://tools.ietf.org/html/rfc2104#section-2) is defined to be `H(K XOR opad, H(K' XOR ipad, text))`, where `H` is the underlying hash function and `K'` is the value of `K` **padded with zeros until it is the length of a digest**. HashLen many zeros is also (not-coincidentally) the default value of `salt` in `HKDF-Extract` if none is specified.\r\n\r\nThus, `salt = \"\"` is equivalent to `salt = nil` is equivalent to `salt = [0x0, 0x0, ..., 0x0]` HashLen many times. So at least _technically_ this is not an issue. However, I think it's still fair to ask though whether it's clearer to the reader to use `nil` instead of `\"\"`.",
+          "createdAt": "2020-09-11T22:37:00Z",
+          "updatedAt": "2020-09-11T22:37:00Z"
+        }
+      ]
+    },
+    {
+      "number": 153,
+      "id": "MDU6SXNzdWU2OTk4MzAwMDQ=",
+      "title": "No official byte representation of private keys",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/153",
+      "state": "OPEN",
+      "author": "rozbb",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, there is no `Serialize/Deserialize` function defined for KEM private keys. The primary reason someone might want this is if they were migrating from one HPKE library to another, and wanted to keep their long-term private keys the same. Currently, a user would have to dig into both implementations to find their internal representation and figure out how to convert between the two manually. The fact that go-hpke and rust-hpke have (I think) the same byte representation of secret keys is good, but it would be better if this were guaranteed by the spec.\r\n\r\nI propose `SerializeSk/DeserializeSk` functions (not married to those names) that do what you'd expect, with the small addition that `DeserializeSk` should reject secret keys that are equivalent to 0.\r\n\r\n**Addendum**\r\n\r\nI also think that `SerializeSk` should canonicalize secret keys. For P-curves, this would mean reducing modulo the curve order, and for X25519/X448 this would mean clamping the keys.\r\n\r\nThe reason I think we should do this is because users might want to save their secret keys using some storage mechanism of their choosing. They might have some expectations of secret key identity (e.g., as a key in a table or an item in a set), and it would be a lot more effort to scream \"equivalent keys are not identical!\" all across our docs than to just make sure that equivalent keys actually are identical.",
+      "createdAt": "2020-09-11T22:50:31Z",
+      "updatedAt": "2020-09-11T22:50:45Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 154,
+      "id": "MDU6SXNzdWU3MDY2ODEyNjU=",
+      "title": "Include DeriveKeyPair output in test vectors",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/154",
+      "state": "OPEN",
+      "author": "kjacobs-moz",
+      "authorAssociation": "NONE",
+      "assignees": [
+        "chris-wood"
+      ],
+      "labels": [],
+      "body": "Currently, there are two ways to generate a keypair for HPKE: `DeriveKeyPair` and `GenerateKeyPair`. The former is unnecessary when HPKE is used only for ECH. For libraries that choose to not implement or export `DeriveKeyPair`, it would be useful to have its output captured in the test vectors. ",
+      "createdAt": "2020-09-22T20:45:44Z",
+      "updatedAt": "2020-09-23T14:47:15Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 155,
+      "id": "MDU6SXNzdWU3MDc0MzEwNDg=",
+      "title": "Restrict low-entropy PSKs",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/155",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [
+        "chris-wood"
+      ],
+      "labels": [],
+      "body": "See https://mailarchive.ietf.org/arch/msg/cfrg/mxBzZq85ijSMNMUwyI3gA3B0U4U/.",
+      "createdAt": "2020-09-23T14:45:10Z",
+      "updatedAt": "2020-09-23T14:47:15Z",
       "closedAt": null,
       "comments": []
     }
@@ -11992,6 +12120,158 @@
       },
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 148,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDcxMTcyNDgy",
+      "title": "Clarify that the output of all DH operations is the x-coordinate for NIST curves",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/148",
+      "state": "MERGED",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-08-20T18:41:08Z",
+      "updatedAt": "2020-08-20T18:44:13Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "47ab7da225f421bc32301f3eaa5ec842ab880047",
+      "headRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "headRefName": "caw/dh-ss",
+      "headRefOid": "cf94e30034ca7746ba75b7d23ebd79c0fb1465b4",
+      "closedAt": "2020-08-20T18:44:13Z",
+      "mergedAt": "2020-08-20T18:44:13Z",
+      "mergedBy": "bifurcation",
+      "mergeCommit": {
+        "oid": "66684a8842fefd7cee2a8b52624693828934f1b8"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDcxODg3NjQx",
+          "commit": {
+            "abbreviatedOid": "cf94e30"
+          },
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2020-08-20T18:44:06Z",
+          "updatedAt": "2020-08-20T18:44:06Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 149,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDcxMjExMjg4",
+      "title": "Apply new test vectors",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/149",
+      "state": "MERGED",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "From https://github.com/cisco/go-hpke/pull/36",
+      "createdAt": "2020-08-20T20:00:18Z",
+      "updatedAt": "2020-08-20T20:13:28Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "66684a8842fefd7cee2a8b52624693828934f1b8",
+      "headRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "headRefName": "caw/new-dh-vectors",
+      "headRefOid": "bdcaa1de6bceca33025d844db2a31ae3afe4d542",
+      "closedAt": "2020-08-20T20:13:28Z",
+      "mergedAt": "2020-08-20T20:13:28Z",
+      "mergedBy": "bifurcation",
+      "mergeCommit": {
+        "oid": "403bf8ce2385549f6e29a6fcac7bd2c5a1b0a1bf"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 150,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDczMTQ4NjUz",
+      "title": "Editorial changes",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/150",
+      "state": "MERGED",
+      "author": "blipp",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Partly based on JP's review from June.",
+      "createdAt": "2020-08-25T11:49:04Z",
+      "updatedAt": "2020-09-23T14:46:58Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "403bf8ce2385549f6e29a6fcac7bd2c5a1b0a1bf",
+      "headRepository": "blipp/draft-irtf-cfrg-hpke",
+      "headRefName": "blipp_editorial",
+      "headRefOid": "5cd2a7b39daf9da2e273daf1cb8e9eb7116c5ab8",
+      "closedAt": "2020-09-23T14:46:58Z",
+      "mergedAt": "2020-09-23T14:46:58Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "9d55cc6b41cad7f5ec30812b032c9ed2954e3507"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk0NzQxNzcy",
+          "commit": {
+            "abbreviatedOid": "5cd2a7b"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2020-09-23T14:46:53Z",
+          "updatedAt": "2020-09-23T14:46:53Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 151,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDgwOTU4NTc5",
+      "title": "Fix circular dependency in DeriveKeyPair",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/151",
+      "state": "CLOSED",
+      "author": "Bren2010",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "DeriveKeyPair is a method defined on KEMs, but it's implementation uses internal HPKE methods. This isn't necessary and can create a circular dependency between KEM implementations and HPKE",
+      "createdAt": "2020-09-07T01:05:56Z",
+      "updatedAt": "2020-09-07T14:11:59Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "403bf8ce2385549f6e29a6fcac7bd2c5a1b0a1bf",
+      "headRepository": "Bren2010/draft-irtf-cfrg-hpke",
+      "headRefName": "brendan/2020.9.0",
+      "headRefOid": "dfae1d9d2415a4b65d057f84e068437612ba0990",
+      "closedAt": "2020-09-07T14:11:59Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDgzNTgwMTQ1",
+          "commit": {
+            "abbreviatedOid": "dfae1d9"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "The editorial changes are fine, but please revert the Expand/Extract changes in both places. We specifically chose to use the Labeled variants for domain separation, as is required by the proofs. @blipp can provide more details if needed.",
+          "createdAt": "2020-09-07T14:02:47Z",
+          "updatedAt": "2020-09-07T14:02:47Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
