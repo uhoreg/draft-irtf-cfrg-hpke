@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-23T14:48:02.010403+00:00",
+  "timestamp": "2020-09-23T23:47:26.342106+00:00",
   "repo": "cfrg/draft-irtf-cfrg-hpke",
   "labels": [
     {
@@ -1718,15 +1718,15 @@
       "id": "MDU6SXNzdWU2Nzk1Nzc3NTk=",
       "title": "Consider removing \"Designated-Verifier Signature\" section",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/142",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Stephen suggested removing this [on the list](https://mailarchive.ietf.org/arch/msg/cfrg/7zhOHPFkCyZC00xLZnsEBT3o6ZU/), because\r\n\r\n> it might muddy the definition of \"signature\" for some people and doesn't seem to add much as-is.\r\n\r\nThis is a reasonable criticism. It does seem somewhat out of place and, as written, I'm not even sure it's correct (considering KCI issues for the Auth variants). \r\n\r\n@bifurcation, what do you think? Can we axe this?",
       "createdAt": "2020-08-15T13:47:00Z",
-      "updatedAt": "2020-08-24T14:00:58Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-23T15:44:59Z",
+      "closedAt": "2020-09-23T15:44:59Z",
       "comments": [
         {
           "author": "blipp",
@@ -1934,6 +1934,46 @@
       "body": "See https://mailarchive.ietf.org/arch/msg/cfrg/mxBzZq85ijSMNMUwyI3gA3B0U4U/.",
       "createdAt": "2020-09-23T14:45:10Z",
       "updatedAt": "2020-09-23T14:47:15Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 156,
+      "id": "MDU6SXNzdWU3MDc0MzM1ODg=",
+      "title": "Add one-shot Export API",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/156",
+      "state": "CLOSED",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "See title.",
+      "createdAt": "2020-09-23T14:48:08Z",
+      "updatedAt": "2020-09-23T14:49:18Z",
+      "closedAt": "2020-09-23T14:49:18Z",
+      "comments": [
+        {
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Dup of #157 ",
+          "createdAt": "2020-09-23T14:49:18Z",
+          "updatedAt": "2020-09-23T14:49:18Z"
+        }
+      ]
+    },
+    {
+      "number": 157,
+      "id": "MDU6SXNzdWU3MDc0MzQzMTM=",
+      "title": "One-shot API for export",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/157",
+      "state": "OPEN",
+      "author": "bifurcation",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "We have one-shot APIs for Seal and Open, it would be nice to have these for the exporter as well.  It seems like the right shape would be something like:\r\n\r\n```\r\ndef SendExport<MODE>(pkR, info, exporter_context, L, ...):\r\n  enc, ctx = Setup<MODE>S(pkR, info, ...)\r\n  exported = ctx.Export(exporter_context, L)\r\n  return enc, exported\r\n\r\ndef ReceiveExport<MODE>(enc, skR, info, exporter_context, L, ...):\r\n  ctx = Setup<MODE>R(enc, skR, info, ...)\r\n  return ctx.Export(exporter_context, L)\r\n```\r\n\r\nIn a way this is just an \"enhanced KEM\", where the enhancements are:\r\n\r\n* The transaction metadata (pkR, info, etc.) are hashed into the key\r\n* The Export function can produce arbitrary-length output",
+      "createdAt": "2020-09-23T14:48:57Z",
+      "updatedAt": "2020-09-23T14:48:57Z",
       "closedAt": null,
       "comments": []
     }
@@ -12269,6 +12309,48 @@
           "body": "The editorial changes are fine, but please revert the Expand/Extract changes in both places. We specifically chose to use the Labeled variants for domain separation, as is required by the proofs. @blipp can provide more details if needed.",
           "createdAt": "2020-09-07T14:02:47Z",
           "updatedAt": "2020-09-07T14:02:47Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 158,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDkxODQyNjgz",
+      "title": "Remove designated verifier signature section.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/158",
+      "state": "MERGED",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #142.",
+      "createdAt": "2020-09-23T14:56:53Z",
+      "updatedAt": "2020-09-23T15:44:59Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "9d55cc6b41cad7f5ec30812b032c9ed2954e3507",
+      "headRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "headRefName": "caw/remove-dvs",
+      "headRefOid": "c22154bee1f102b3c78b2e346347a5f120f5019e",
+      "closedAt": "2020-09-23T15:44:59Z",
+      "mergedAt": "2020-09-23T15:44:59Z",
+      "mergedBy": "bifurcation",
+      "mergeCommit": {
+        "oid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk0ODAwOTcw",
+          "commit": {
+            "abbreviatedOid": "c22154b"
+          },
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2020-09-23T15:44:53Z",
+          "updatedAt": "2020-09-23T15:44:53Z",
           "comments": []
         }
       ]
