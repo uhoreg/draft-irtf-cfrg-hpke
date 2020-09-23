@@ -101,11 +101,11 @@ Table of Contents
      8.5.  Domain Separation . . . . . . . . . . . . . . . . . . . .  27
      8.6.  External Requirements / Non-Goals . . . . . . . . . . . .  27
      8.7.  Metadata Protection . . . . . . . . . . . . . . . . . . .  28
-     8.8.  Designated-Verifier Signature . . . . . . . . . . . . . .  28
    9.  Message Encoding  . . . . . . . . . . . . . . . . . . . . . .  29
    10. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  29
      10.1.  KEM Identifiers  . . . . . . . . . . . . . . . . . . . .  29
      10.2.  KDF Identifiers  . . . . . . . . . . . . . . . . . . . .  30
+     10.3.  AEAD Identifiers . . . . . . . . . . . . . . . . . . . .  30
 
 
 
@@ -114,45 +114,44 @@ Barnes, et al.            Expires 27 March 2021                 [Page 2]
 Internet-Draft                    HPKE                    September 2020
 
 
-     10.3.  AEAD Identifiers . . . . . . . . . . . . . . . . . . . .  30
-   11. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  31
-   12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  31
+   11. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  30
+   12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  30
      12.1.  Normative References . . . . . . . . . . . . . . . . . .  31
      12.2.  Informative References . . . . . . . . . . . . . . . . .  31
-   Appendix A.  Test Vectors . . . . . . . . . . . . . . . . . . . .  35
-     A.1.  DHKEM(X25519, HKDF-SHA256), HKDF-SHA256, AES-128-GCM  . .  35
-       A.1.1.  Base Setup Information  . . . . . . . . . . . . . . .  35
+   Appendix A.  Test Vectors . . . . . . . . . . . . . . . . . . . .  34
+     A.1.  DHKEM(X25519, HKDF-SHA256), HKDF-SHA256, AES-128-GCM  . .  34
+       A.1.1.  Base Setup Information  . . . . . . . . . . . . . . .  34
        A.1.2.  PSK Setup Information . . . . . . . . . . . . . . . .  36
-       A.1.3.  Auth Setup Information  . . . . . . . . . . . . . . .  38
-       A.1.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  40
+       A.1.3.  Auth Setup Information  . . . . . . . . . . . . . . .  37
+       A.1.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  39
      A.2.  DHKEM(X25519, HKDF-SHA256), HKDF-SHA256,
-           ChaCha20Poly1305  . . . . . . . . . . . . . . . . . . . .  42
-       A.2.1.  Base Setup Information  . . . . . . . . . . . . . . .  42
-       A.2.2.  PSK Setup Information . . . . . . . . . . . . . . . .  44
-       A.2.3.  Auth Setup Information  . . . . . . . . . . . . . . .  45
-       A.2.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  47
-     A.3.  DHKEM(P-256, HKDF-SHA256), HKDF-SHA256, AES-128-GCM . . .  49
-       A.3.1.  Base Setup Information  . . . . . . . . . . . . . . .  49
-       A.3.2.  PSK Setup Information . . . . . . . . . . . . . . . .  51
-       A.3.3.  Auth Setup Information  . . . . . . . . . . . . . . .  53
-       A.3.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  55
-     A.4.  DHKEM(P-256, HKDF-SHA256), HKDF-SHA512, AES-128-GCM . . .  57
-       A.4.1.  Base Setup Information  . . . . . . . . . . . . . . .  57
-       A.4.2.  PSK Setup Information . . . . . . . . . . . . . . . .  59
-       A.4.3.  Auth Setup Information  . . . . . . . . . . . . . . .  61
-       A.4.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  63
+           ChaCha20Poly1305  . . . . . . . . . . . . . . . . . . . .  41
+       A.2.1.  Base Setup Information  . . . . . . . . . . . . . . .  41
+       A.2.2.  PSK Setup Information . . . . . . . . . . . . . . . .  43
+       A.2.3.  Auth Setup Information  . . . . . . . . . . . . . . .  44
+       A.2.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  46
+     A.3.  DHKEM(P-256, HKDF-SHA256), HKDF-SHA256, AES-128-GCM . . .  48
+       A.3.1.  Base Setup Information  . . . . . . . . . . . . . . .  48
+       A.3.2.  PSK Setup Information . . . . . . . . . . . . . . . .  50
+       A.3.3.  Auth Setup Information  . . . . . . . . . . . . . . .  52
+       A.3.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  54
+     A.4.  DHKEM(P-256, HKDF-SHA256), HKDF-SHA512, AES-128-GCM . . .  56
+       A.4.1.  Base Setup Information  . . . . . . . . . . . . . . .  56
+       A.4.2.  PSK Setup Information . . . . . . . . . . . . . . . .  58
+       A.4.3.  Auth Setup Information  . . . . . . . . . . . . . . .  60
+       A.4.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  62
      A.5.  DHKEM(P-256, HKDF-SHA256), HKDF-SHA256,
-           ChaCha20Poly1305  . . . . . . . . . . . . . . . . . . . .  65
-       A.5.1.  Base Setup Information  . . . . . . . . . . . . . . .  65
-       A.5.2.  PSK Setup Information . . . . . . . . . . . . . . . .  67
-       A.5.3.  Auth Setup Information  . . . . . . . . . . . . . . .  69
-       A.5.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  71
-     A.6.  DHKEM(P-521, HKDF-SHA512), HKDF-SHA512, AES-256-GCM . . .  73
-       A.6.1.  Base Setup Information  . . . . . . . . . . . . . . .  73
-       A.6.2.  PSK Setup Information . . . . . . . . . . . . . . . .  75
-       A.6.3.  Auth Setup Information  . . . . . . . . . . . . . . .  77
-       A.6.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  79
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  81
+           ChaCha20Poly1305  . . . . . . . . . . . . . . . . . . . .  64
+       A.5.1.  Base Setup Information  . . . . . . . . . . . . . . .  64
+       A.5.2.  PSK Setup Information . . . . . . . . . . . . . . . .  66
+       A.5.3.  Auth Setup Information  . . . . . . . . . . . . . . .  68
+       A.5.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  70
+     A.6.  DHKEM(P-521, HKDF-SHA512), HKDF-SHA512, AES-256-GCM . . .  72
+       A.6.1.  Base Setup Information  . . . . . . . . . . . . . . .  72
+       A.6.2.  PSK Setup Information . . . . . . . . . . . . . . . .  74
+       A.6.3.  Auth Setup Information  . . . . . . . . . . . . . . .  76
+       A.6.4.  AuthPSK Setup Information . . . . . . . . . . . . . .  78
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  80
 
 1.  Introduction
 
@@ -162,6 +161,7 @@ Internet-Draft                    HPKE                    September 2020
    management advantages of asymmetric cryptography and the performance
    benefits of symmetric cryptography.  The traditional combination has
    been "encrypt the symmetric key with the public key."  "Hybrid"
+   public-key encryption schemes (HPKE), specified here, take a
 
 
 
@@ -170,7 +170,6 @@ Barnes, et al.            Expires 27 March 2021                 [Page 3]
 Internet-Draft                    HPKE                    September 2020
 
 
-   public-key encryption schemes (HPKE), specified here, take a
    different approach: "generate the symmetric key and its encapsulation
    with the public key."  Specifically, encrypted messages convey an
    encryption key encapsulated with a public-key scheme, along with one
@@ -218,6 +217,7 @@ Internet-Draft                    HPKE                    September 2020
    *  "(skX, pkX)": A KEM key pair used in role X; "skX" is the private
       key and "pkX" is the public key.
 
+   *  "pk(skX)": The public key corresponding to private key "skX".
 
 
 
@@ -225,8 +225,6 @@ Barnes, et al.            Expires 27 March 2021                 [Page 4]
 
 Internet-Draft                    HPKE                    September 2020
 
-
-   *  "pk(skX)": The public key corresponding to private key "skX".
 
    *  Sender (S): Role of entity which sends an encrypted message.
 
@@ -273,6 +271,8 @@ Internet-Draft                    HPKE                    September 2020
          fixed-length symmetric key (the KEM shared secret) and a fixed-
          length encapsulation of that key that can be decapsulated by
          the holder of the private key corresponding to "pk"
+
+
 
 
 
@@ -1554,13 +1554,13 @@ Internet-Draft                    HPKE                    September 2020
    schemes in [BNT19] could be extended to cover other metadata.
    However, this construction would require further analysis.
 
-8.8.  Designated-Verifier Signature
 
-   The Auth and AuthPSK modes can be used to construct a lightweight
-   "designated-verifier signature" scheme [JKR96], in the sense that the
-   message is authenticated as coming from the sender, but the only
-   party who can verify the authentication is the recipient (the holder
-   of "skR").
+
+
+
+
+
+
 
 
 
@@ -1569,24 +1569,6 @@ Barnes, et al.            Expires 27 March 2021                [Page 28]
 
 Internet-Draft                    HPKE                    September 2020
 
-
-   To create such a signature, the sender simply performs a normal HPKE
-   setup in the proper mode, and calls the Seal method on the resulting
-   context with an empty plaintext value and the content to be signed as
-   AAD.  This produces an encoded key "enc" and a ciphertext value that
-   contains only the AAD tag.
-
-   For example, using DHKEM(X25519, HKDF-SHA256) and AES-128-GCM, this
-   would produce a 48-byte signature comprising a 32-byte ephemeral
-   X25519 key and a 16-byte GCM tag.
-
-   To verify such a signature, the recipient performs the corresponding
-   HPKE setup and calls "Open()" with the provided ciphertext.  If the
-   AEAD authentication passes, then the signature is valid.
-
-   This scheme reuses the authentication scheme underlying the AEAD
-   algorithm in use, while using the KEM to establish a one-time
-   authentication key from a pair of KEM public keys.
 
 9.  Message Encoding
 
@@ -1618,14 +1600,6 @@ Internet-Draft                    HPKE                    September 2020
    encapsulation algorithms defined for use with HPKE.  These are two-
    byte values, so the maximum possible value is 0xFFFF = 65535.
 
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 29]
-
-Internet-Draft                    HPKE                    September 2020
-
-
    Template:
 
    *  Value: The two-byte identifier for the algorithm
@@ -1644,6 +1618,13 @@ Internet-Draft                    HPKE                    September 2020
    *  Reference: Where this algorithm is defined
 
    Initial contents: Provided in Section 7.1
+
+
+
+Barnes, et al.            Expires 27 March 2021                [Page 29]
+
+Internet-Draft                    HPKE                    September 2020
+
 
 10.2.  KDF Identifiers
 
@@ -1674,14 +1655,6 @@ Internet-Draft                    HPKE                    September 2020
 
    *  Value: The two-byte identifier for the algorithm
 
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 30]
-
-Internet-Draft                    HPKE                    September 2020
-
-
    *  AEAD: The name of the algorithm
 
    *  Nk: The length in bytes of a key for this algorithm
@@ -1700,6 +1673,14 @@ Internet-Draft                    HPKE                    September 2020
    for helpful feedback that greatly improved this document.
 
 12.  References
+
+
+
+
+Barnes, et al.            Expires 27 March 2021                [Page 30]
+
+Internet-Draft                    HPKE                    September 2020
+
 
 12.1.  Normative References
 
@@ -1728,16 +1709,6 @@ Internet-Draft                    HPKE                    September 2020
 
 12.2.  Informative References
 
-
-
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 31]
-
-Internet-Draft                    HPKE                    September 2020
-
-
    [ANSI]     American National Standards Institute, "ANSI X9.63 Public
               Key Cryptography for the Financial Services Industry --
               Key Agreement and Key Transport Using Elliptic Curve
@@ -1756,6 +1727,16 @@ Internet-Draft                    HPKE                    September 2020
               Public-Key Encryption Schemes Secure against Adaptive
               Chosen Ciphertext Attack", 2001,
               <https://eprint.iacr.org/2001/108>.
+
+
+
+
+
+
+Barnes, et al.            Expires 27 March 2021                [Page 31]
+
+Internet-Draft                    HPKE                    September 2020
+
 
    [fiveG]    "Security architecture and procedures for 5G System",
               2019,
@@ -1782,18 +1763,6 @@ Internet-Draft                    HPKE                    September 2020
               Lipp, B., "An Analysis of Hybrid Public Key Encryption",
               2020, <https://eprint.iacr.org/2020/243.pdf>.
 
-
-
-
-
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 32]
-
-Internet-Draft                    HPKE                    September 2020
-
-
    [I-D.ietf-mls-protocol]
               Barnes, R., Beurdouche, B., Millican, J., Omara, E., Cohn-
               Gordon, K., and R. Robert, "The Messaging Layer Security
@@ -1817,15 +1786,19 @@ Internet-Draft                    HPKE                    September 2020
               Cryptography Vol. 2, pp. 107-125, June 1992,
               <https://doi.org/10.1007/bf00124891>.
 
+
+
+
+Barnes, et al.            Expires 27 March 2021                [Page 32]
+
+Internet-Draft                    HPKE                    September 2020
+
+
    [ISO]      International Organization for Standardization /
               International Electrotechnical Commission, "ISO/IEC
               18033-2, Information Technology - Security Techniques -
               Encryption Algorithms - Part 2 -- Asymmetric Ciphers",
               2006.
-
-   [JKR96]    Jakobsson, M., Sako, K., and R. Impagliazzo, "Designated
-              Verifier Proofs and Their Applications", 1996,
-              <https://doi.org/10.1007%2F3-540-49677-7_30>.
 
    [keyagreement]
               Barker, E., Chen, L., Roginsky, A., Vassilev, A., and R.
@@ -1842,13 +1815,6 @@ Internet-Draft                    HPKE                    September 2020
 
    [NaCl]     "Public-key authenticated encryption: crypto_box", 2019,
               <https://nacl.cr.yp.to/box.html>.
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 33]
-
-Internet-Draft                    HPKE                    September 2020
-
 
    [NISTCurves]
               "Digital Signature Standard (DSS)",
@@ -1874,6 +1840,16 @@ Internet-Draft                    HPKE                    September 2020
               for Security", RFC 7748, DOI 10.17487/RFC7748, January
               2016, <https://www.rfc-editor.org/info/rfc7748>.
 
+
+
+
+
+
+Barnes, et al.            Expires 27 March 2021                [Page 33]
+
+Internet-Draft                    HPKE                    September 2020
+
+
    [RFC8439]  Nir, Y. and A. Langley, "ChaCha20 and Poly1305 for IETF
               Protocols", RFC 8439, DOI 10.17487/RFC8439, June 2018,
               <https://www.rfc-editor.org/info/rfc8439>.
@@ -1896,16 +1872,6 @@ Internet-Draft                    HPKE                    September 2020
               hpke/blob/47118132e6913848eb1b4121370b1795d867a7bf/test-
               vectors.json>.
 
-
-
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 34]
-
-Internet-Draft                    HPKE                    September 2020
-
-
    [WireGuard]
               Donenfeld, J.A., "WireGuard: Next Generation Kernel
               Network Tunnel", 2020,
@@ -1921,6 +1887,24 @@ Appendix A.  Test Vectors
 A.1.  DHKEM(X25519, HKDF-SHA256), HKDF-SHA256, AES-128-GCM
 
 A.1.1.  Base Setup Information
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Barnes, et al.            Expires 27 March 2021                [Page 34]
+
+Internet-Draft                    HPKE                    September 2020
+
 
 mode: 0
 kem_id: 32
@@ -1942,25 +1926,6 @@ exporter_secret:
 84b158baff479e2a1e0392d62f6ebcd5ef5ce6002b7a06d1c91d62c9612761ba
 
 A.1.1.1.  Encryptions
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 35]
-
-Internet-Draft                    HPKE                    September 2020
-
 
 sequence number: 0
 plaintext: 4265617574792069732074727574682c20747275746820626561757479
@@ -1990,33 +1955,14 @@ nonce: 7530e5ad98ff49a760326cbd
 ciphertext: a136531ddebd292e8d2e149637a54525bfe764a6d562da42bd3a9233f9f8
 2ea54d5511773cf81621f16891d143
 
-A.1.2.  PSK Setup Information
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 36]
+Barnes, et al.            Expires 27 March 2021                [Page 35]
 
 Internet-Draft                    HPKE                    September 2020
 
+
+A.1.2.  PSK Setup Information
 
 mode: 1
 kem_id: 32
@@ -2067,9 +2013,7 @@ A.1.2.1.  Encryptions
 
 
 
-
-
-Barnes, et al.            Expires 27 March 2021                [Page 37]
+Barnes, et al.            Expires 27 March 2021                [Page 36]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2125,7 +2069,7 @@ A.1.3.  Auth Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 38]
+Barnes, et al.            Expires 27 March 2021                [Page 37]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2181,7 +2125,7 @@ A.1.3.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 39]
+Barnes, et al.            Expires 27 March 2021                [Page 38]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2237,7 +2181,7 @@ A.1.4.  AuthPSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 40]
+Barnes, et al.            Expires 27 March 2021                [Page 39]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2293,7 +2237,7 @@ A.1.4.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 41]
+Barnes, et al.            Expires 27 March 2021                [Page 40]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2349,7 +2293,7 @@ A.2.1.  Base Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 42]
+Barnes, et al.            Expires 27 March 2021                [Page 41]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2405,7 +2349,7 @@ ciphertext: 7e64397a366f3b53f4d06e0d6533c2b9732a9ae5c299c4b31293b90815d6
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 43]
+Barnes, et al.            Expires 27 March 2021                [Page 42]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2461,7 +2405,7 @@ A.2.2.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 44]
+Barnes, et al.            Expires 27 March 2021                [Page 43]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2517,7 +2461,7 @@ A.2.3.  Auth Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 45]
+Barnes, et al.            Expires 27 March 2021                [Page 44]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2573,7 +2517,7 @@ A.2.3.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 46]
+Barnes, et al.            Expires 27 March 2021                [Page 45]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2629,7 +2573,7 @@ A.2.4.  AuthPSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 47]
+Barnes, et al.            Expires 27 March 2021                [Page 46]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2685,7 +2629,7 @@ A.2.4.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 48]
+Barnes, et al.            Expires 27 March 2021                [Page 47]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2741,7 +2685,7 @@ A.3.1.  Base Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 49]
+Barnes, et al.            Expires 27 March 2021                [Page 48]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2797,7 +2741,7 @@ A.3.1.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 50]
+Barnes, et al.            Expires 27 March 2021                [Page 49]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2853,7 +2797,7 @@ A.3.2.  PSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 51]
+Barnes, et al.            Expires 27 March 2021                [Page 50]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2909,7 +2853,7 @@ A.3.2.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 52]
+Barnes, et al.            Expires 27 March 2021                [Page 51]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -2965,7 +2909,7 @@ A.3.3.  Auth Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 53]
+Barnes, et al.            Expires 27 March 2021                [Page 52]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3021,7 +2965,7 @@ A.3.3.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 54]
+Barnes, et al.            Expires 27 March 2021                [Page 53]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3077,7 +3021,7 @@ A.3.4.  AuthPSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 55]
+Barnes, et al.            Expires 27 March 2021                [Page 54]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3133,7 +3077,7 @@ A.3.4.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 56]
+Barnes, et al.            Expires 27 March 2021                [Page 55]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3189,7 +3133,7 @@ A.4.1.  Base Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 57]
+Barnes, et al.            Expires 27 March 2021                [Page 56]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3245,7 +3189,7 @@ A.4.1.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 58]
+Barnes, et al.            Expires 27 March 2021                [Page 57]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3301,7 +3245,7 @@ A.4.2.  PSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 59]
+Barnes, et al.            Expires 27 March 2021                [Page 58]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3357,7 +3301,7 @@ A.4.2.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 60]
+Barnes, et al.            Expires 27 March 2021                [Page 59]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3413,7 +3357,7 @@ A.4.3.  Auth Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 61]
+Barnes, et al.            Expires 27 March 2021                [Page 60]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3469,7 +3413,7 @@ A.4.3.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 62]
+Barnes, et al.            Expires 27 March 2021                [Page 61]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3525,7 +3469,7 @@ A.4.4.  AuthPSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 63]
+Barnes, et al.            Expires 27 March 2021                [Page 62]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3581,7 +3525,7 @@ A.4.4.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 64]
+Barnes, et al.            Expires 27 March 2021                [Page 63]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3637,7 +3581,7 @@ A.5.1.  Base Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 65]
+Barnes, et al.            Expires 27 March 2021                [Page 64]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3693,7 +3637,7 @@ A.5.1.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 66]
+Barnes, et al.            Expires 27 March 2021                [Page 65]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3749,7 +3693,7 @@ A.5.2.  PSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 67]
+Barnes, et al.            Expires 27 March 2021                [Page 66]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3805,7 +3749,7 @@ A.5.2.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 68]
+Barnes, et al.            Expires 27 March 2021                [Page 67]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3861,7 +3805,7 @@ A.5.3.  Auth Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 69]
+Barnes, et al.            Expires 27 March 2021                [Page 68]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3917,7 +3861,7 @@ A.5.3.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 70]
+Barnes, et al.            Expires 27 March 2021                [Page 69]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -3973,7 +3917,7 @@ A.5.4.  AuthPSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 71]
+Barnes, et al.            Expires 27 March 2021                [Page 70]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4029,7 +3973,7 @@ A.5.4.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 72]
+Barnes, et al.            Expires 27 March 2021                [Page 71]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4085,7 +4029,7 @@ A.6.1.  Base Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 73]
+Barnes, et al.            Expires 27 March 2021                [Page 72]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4141,7 +4085,7 @@ A.6.1.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 74]
+Barnes, et al.            Expires 27 March 2021                [Page 73]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4197,7 +4141,7 @@ A.6.2.  PSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 75]
+Barnes, et al.            Expires 27 March 2021                [Page 74]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4253,7 +4197,7 @@ A.6.2.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 76]
+Barnes, et al.            Expires 27 March 2021                [Page 75]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4309,7 +4253,7 @@ A.6.3.  Auth Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 77]
+Barnes, et al.            Expires 27 March 2021                [Page 76]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4365,7 +4309,7 @@ A.6.3.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 78]
+Barnes, et al.            Expires 27 March 2021                [Page 77]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4421,7 +4365,7 @@ A.6.4.  AuthPSK Setup Information
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 79]
+Barnes, et al.            Expires 27 March 2021                [Page 78]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4477,7 +4421,7 @@ A.6.4.1.  Encryptions
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 80]
+Barnes, et al.            Expires 27 March 2021                [Page 79]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4533,7 +4477,7 @@ Authors' Addresses
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 81]
+Barnes, et al.            Expires 27 March 2021                [Page 80]
 
 Internet-Draft                    HPKE                    September 2020
 
@@ -4589,4 +4533,4 @@ Internet-Draft                    HPKE                    September 2020
 
 
 
-Barnes, et al.            Expires 27 March 2021                [Page 82]
+Barnes, et al.            Expires 27 March 2021                [Page 81]
