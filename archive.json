@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-23T23:47:26.342106+00:00",
+  "timestamp": "2020-09-25T14:25:15.815505+00:00",
   "repo": "cfrg/draft-irtf-cfrg-hpke",
   "labels": [
     {
@@ -12352,6 +12352,79 @@
           "createdAt": "2020-09-23T15:44:53Z",
           "updatedAt": "2020-09-23T15:44:53Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 159,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDkyMTAxMzgw",
+      "title": "Require PSKs have at least 32 bytes of entropy.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/159",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #155.\r\n\r\nNote that we *could* replace the lower bound with `Nh` rather than `32`, but I think this is a bit too conservative. We currently allow PSKs that are less than `Nh` bytes in length, so using a constant `32` is not a regression. (I do agree that it's cleaner to just use `Nh`!)\r\n\r\ncc @blipp",
+      "createdAt": "2020-09-23T23:48:46Z",
+      "updatedAt": "2020-09-24T00:39:01Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee",
+      "headRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "headRefName": "caw/psk-lower-limit",
+      "headRefOid": "3408a1e2bc0a300fb6b85dfe47cf750cdf793b5e",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 160,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDkyMTA0MzMy",
+      "title": "Add a single-shot export API.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/160",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #157.\r\n\r\nI'll add test vectors in a followup PR.\r\n\r\ncc @blipp ",
+      "createdAt": "2020-09-23T23:59:42Z",
+      "updatedAt": "2020-09-25T14:24:36Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee",
+      "headRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "headRefName": "caw/single-shot-export",
+      "headRefOid": "479ca4e211f747a70061d3871601b07303869548",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk2NDcxNTE3",
+          "commit": {
+            "abbreviatedOid": "c79b150"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-09-25T14:24:30Z",
+          "updatedAt": "2020-09-25T14:24:31Z",
+          "comments": [
+            {
+              "originalPosition": 16,
+              "body": "```suggestion\r\nApplications may also want to derive a secret known only to a given recipient. \r\nThis section provides templates for HPKE APIs that implement stateless\r\n```",
+              "createdAt": "2020-09-25T14:24:30Z",
+              "updatedAt": "2020-09-25T14:24:36Z"
+            }
+          ]
         }
       ]
     }
