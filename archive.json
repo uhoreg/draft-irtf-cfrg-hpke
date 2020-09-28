@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-25T14:25:15.815505+00:00",
+  "timestamp": "2020-09-28T16:55:46.305957+00:00",
   "repo": "cfrg/draft-irtf-cfrg-hpke",
   "labels": [
     {
@@ -1966,14 +1966,30 @@
       "id": "MDU6SXNzdWU3MDc0MzQzMTM=",
       "title": "One-shot API for export",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/157",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "bifurcation",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "We have one-shot APIs for Seal and Open, it would be nice to have these for the exporter as well.  It seems like the right shape would be something like:\r\n\r\n```\r\ndef SendExport<MODE>(pkR, info, exporter_context, L, ...):\r\n  enc, ctx = Setup<MODE>S(pkR, info, ...)\r\n  exported = ctx.Export(exporter_context, L)\r\n  return enc, exported\r\n\r\ndef ReceiveExport<MODE>(enc, skR, info, exporter_context, L, ...):\r\n  ctx = Setup<MODE>R(enc, skR, info, ...)\r\n  return ctx.Export(exporter_context, L)\r\n```\r\n\r\nIn a way this is just an \"enhanced KEM\", where the enhancements are:\r\n\r\n* The transaction metadata (pkR, info, etc.) are hashed into the key\r\n* The Export function can produce arbitrary-length output",
       "createdAt": "2020-09-23T14:48:57Z",
-      "updatedAt": "2020-09-23T14:48:57Z",
+      "updatedAt": "2020-09-25T14:39:34Z",
+      "closedAt": "2020-09-25T14:39:34Z",
+      "comments": []
+    },
+    {
+      "number": 161,
+      "id": "MDU6SXNzdWU3MDkzMDkyMzk=",
+      "title": "Wire format of HPKE context",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/161",
+      "state": "OPEN",
+      "author": "cjpatton",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The draft does not specify how the HPKE context (cipher suite, exporter secret, key, nonce, sequence number, etc.) is represented on the wire. There are use cases for HPKE in which it is desirable to transmit the context over a secure channel. For example, Cloudflare's prototype implementation of the Encrypted ClientHello (ECH) extension for TLS will offload KEM operations to an RPC server (https://github.com/cloudflare/go/pull/30).\r\n\r\nI'm not requesting a change to the spec at this point ... I just wanted to bring up the use case and ask what people think. I'm not sure, but it might make sense to standardize the encoding. One proposal is here: https://github.com/cisco/go-hpke/blob/master/hpke.go#L197. In addition to the above parameters, this format encodes the \"role\" of the context's user, i.e., whether they are the sender or receiver.",
+      "createdAt": "2020-09-25T22:02:27Z",
+      "updatedAt": "2020-09-25T22:02:27Z",
       "closedAt": null,
       "comments": []
     }
@@ -12367,13 +12383,13 @@
       "labels": [],
       "body": "Closes #155.\r\n\r\nNote that we *could* replace the lower bound with `Nh` rather than `32`, but I think this is a bit too conservative. We currently allow PSKs that are less than `Nh` bytes in length, so using a constant `32` is not a regression. (I do agree that it's cleaner to just use `Nh`!)\r\n\r\ncc @blipp",
       "createdAt": "2020-09-23T23:48:46Z",
-      "updatedAt": "2020-09-24T00:39:01Z",
+      "updatedAt": "2020-09-28T16:54:50Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
       "baseRefName": "master",
       "baseRefOid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee",
       "headRepository": "cfrg/draft-irtf-cfrg-hpke",
       "headRefName": "caw/psk-lower-limit",
-      "headRefOid": "3408a1e2bc0a300fb6b85dfe47cf750cdf793b5e",
+      "headRefOid": "3fda46c838bdc681031db89101de22fd01ee4408",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12386,24 +12402,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDkyMTA0MzMy",
       "title": "Add a single-shot export API.",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/160",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #157.\r\n\r\nI'll add test vectors in a followup PR.\r\n\r\ncc @blipp ",
       "createdAt": "2020-09-23T23:59:42Z",
-      "updatedAt": "2020-09-25T14:24:36Z",
+      "updatedAt": "2020-09-25T14:39:34Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
       "baseRefName": "master",
       "baseRefOid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee",
       "headRepository": "cfrg/draft-irtf-cfrg-hpke",
       "headRefName": "caw/single-shot-export",
       "headRefOid": "479ca4e211f747a70061d3871601b07303869548",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2020-09-25T14:39:34Z",
+      "mergedAt": "2020-09-25T14:39:34Z",
+      "mergedBy": "bifurcation",
+      "mergeCommit": {
+        "oid": "d7de7723b542093379394c0bfd316a5547c86767"
+      },
       "comments": [],
       "reviews": [
         {
@@ -12425,6 +12443,19 @@
               "updatedAt": "2020-09-25T14:24:36Z"
             }
           ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk2NDg0Nzcx",
+          "commit": {
+            "abbreviatedOid": "479ca4e"
+          },
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2020-09-25T14:39:29Z",
+          "updatedAt": "2020-09-25T14:39:29Z",
+          "comments": []
         }
       ]
     }
