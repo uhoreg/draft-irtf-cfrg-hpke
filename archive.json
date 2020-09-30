@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-28T16:55:46.305957+00:00",
+  "timestamp": "2020-09-30T22:11:50.325833+00:00",
   "repo": "cfrg/draft-irtf-cfrg-hpke",
   "labels": [
     {
@@ -1989,9 +1989,24 @@
       "labels": [],
       "body": "The draft does not specify how the HPKE context (cipher suite, exporter secret, key, nonce, sequence number, etc.) is represented on the wire. There are use cases for HPKE in which it is desirable to transmit the context over a secure channel. For example, Cloudflare's prototype implementation of the Encrypted ClientHello (ECH) extension for TLS will offload KEM operations to an RPC server (https://github.com/cloudflare/go/pull/30).\r\n\r\nI'm not requesting a change to the spec at this point ... I just wanted to bring up the use case and ask what people think. I'm not sure, but it might make sense to standardize the encoding. One proposal is here: https://github.com/cisco/go-hpke/blob/master/hpke.go#L197. In addition to the above parameters, this format encodes the \"role\" of the context's user, i.e., whether they are the sender or receiver.",
       "createdAt": "2020-09-25T22:02:27Z",
-      "updatedAt": "2020-09-25T22:02:27Z",
+      "updatedAt": "2020-09-29T15:40:57Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "Lekensteyn",
+          "authorAssociation": "NONE",
+          "body": "There are many serialization formats possible (protobuf, DER, JSON, TLS syntax, ...). The \"Context\" type seems to refer to an implementation detail rather than an interchange format. If that is the case, then I don't think that a specific format has to be dicatated.",
+          "createdAt": "2020-09-29T14:36:19Z",
+          "updatedAt": "2020-09-29T14:36:19Z"
+        },
+        {
+          "author": "cjpatton",
+          "authorAssociation": "NONE",
+          "body": "I'm fine with that resolution.",
+          "createdAt": "2020-09-29T15:40:56Z",
+          "updatedAt": "2020-09-29T15:40:56Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -12383,19 +12398,76 @@
       "labels": [],
       "body": "Closes #155.\r\n\r\nNote that we *could* replace the lower bound with `Nh` rather than `32`, but I think this is a bit too conservative. We currently allow PSKs that are less than `Nh` bytes in length, so using a constant `32` is not a regression. (I do agree that it's cleaner to just use `Nh`!)\r\n\r\ncc @blipp",
       "createdAt": "2020-09-23T23:48:46Z",
-      "updatedAt": "2020-09-28T16:54:50Z",
+      "updatedAt": "2020-09-30T22:11:33Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
       "baseRefName": "master",
       "baseRefOid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee",
       "headRepository": "cfrg/draft-irtf-cfrg-hpke",
       "headRefName": "caw/psk-lower-limit",
-      "headRefOid": "3fda46c838bdc681031db89101de22fd01ee4408",
+      "headRefOid": "e261914492e1d1a6ec579f4af2c30d9fba4610df",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk5NzExOTk5",
+          "commit": {
+            "abbreviatedOid": "3fda46c"
+          },
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Allowing PSKs with only 32 bytes seems fine and gives more freedom to the applications using HPKE (instead of requiring `Nh` bytes, which is `>= 32` bytes for all KDFs specified in this draft, and so, would indeed make the formulations cleaner).",
+          "createdAt": "2020-09-30T18:40:53Z",
+          "updatedAt": "2020-09-30T22:03:04Z",
+          "comments": [
+            {
+              "originalPosition": 31,
+              "body": "```suggestion\r\nThe PSK MUST have at least 32 bytes of entropy and SHOULD be of length `Nh`\r\n```",
+              "createdAt": "2020-09-30T18:40:53Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            },
+            {
+              "originalPosition": 43,
+              "body": "```suggestion\r\nThe PSK MUST have at least 32 bytes of entropy and SHOULD be of length `Nh`\r\n```",
+              "createdAt": "2020-09-30T18:41:04Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            },
+            {
+              "originalPosition": 59,
+              "body": "```suggestion\r\nentropy and SHOULD be of length `Nh` bytes or longer. Using a PSK longer than\r\n```",
+              "createdAt": "2020-09-30T18:41:35Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            },
+            {
+              "originalPosition": 81,
+              "body": "```suggestion\r\nThe adversary knows the KEM shared secret `shared_secret` if it knows all\r\n```",
+              "createdAt": "2020-09-30T18:46:40Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            },
+            {
+              "originalPosition": 87,
+              "body": "```suggestion\r\nattacker generates an HPKE ciphertext for each value in `S`, and submits\r\n```\r\nat least for me it would be clearer with \u201cfor\u201d, that it is separate ciphertexts.",
+              "createdAt": "2020-09-30T18:50:11Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            },
+            {
+              "originalPosition": 93,
+              "body": "```suggestion\r\nk, the maximum message length in blocks. The PSK MUST therefore be chosen with\r\n```\r\nAn uppercase MUST probably does not hurt here, but it would probably also be ok to leave it in lowercase because we clarify the requirements before already.",
+              "createdAt": "2020-09-30T18:52:25Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            },
+            {
+              "originalPosition": 63,
+              "body": "```suggestion\r\n32 bytes but shorter than `Nh` bytes is permitted. A PSK that is longer than\r\n`Nh` bytes or that has more than `Nh` bytes of entropy, respectively, does not\r\nprovide better security than a PSK with `Nh` bytes of entropy: The\r\neffectively used value is `psk_hash`, which has maximum `Nh` bytes of\r\nentropy.\r\n```\r\n\r\nKnowing `psk_hash` is equivalent to knowing `psk`, in this protocol. If we change to\r\n`secret = LabeledExtract(shared_secret, \"secret\", psk)`,\r\nthen we should delete this part (\u201cA PSK that is longer than, \u2026\u201d): the more entropy the psk, the harder the partition oracle attack will become to recover the psk.",
+              "createdAt": "2020-09-30T21:58:18Z",
+              "updatedAt": "2020-09-30T22:11:33Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 160,
