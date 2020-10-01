@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-30T22:11:50.325833+00:00",
+  "timestamp": "2020-10-01T16:26:08.904503+00:00",
   "repo": "cfrg/draft-irtf-cfrg-hpke",
   "labels": [
     {
@@ -1924,7 +1924,7 @@
       "id": "MDU6SXNzdWU3MDc0MzEwNDg=",
       "title": "Restrict low-entropy PSKs",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/issues/155",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -1933,8 +1933,8 @@
       "labels": [],
       "body": "See https://mailarchive.ietf.org/arch/msg/cfrg/mxBzZq85ijSMNMUwyI3gA3B0U4U/.",
       "createdAt": "2020-09-23T14:45:10Z",
-      "updatedAt": "2020-09-23T14:47:15Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-30T23:03:05Z",
+      "closedAt": "2020-09-30T23:03:05Z",
       "comments": []
     },
     {
@@ -12391,24 +12391,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDkyMTAxMzgw",
       "title": "Require PSKs have at least 32 bytes of entropy.",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/159",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #155.\r\n\r\nNote that we *could* replace the lower bound with `Nh` rather than `32`, but I think this is a bit too conservative. We currently allow PSKs that are less than `Nh` bytes in length, so using a constant `32` is not a regression. (I do agree that it's cleaner to just use `Nh`!)\r\n\r\ncc @blipp",
       "createdAt": "2020-09-23T23:48:46Z",
-      "updatedAt": "2020-09-30T22:11:33Z",
+      "updatedAt": "2020-09-30T23:03:05Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
       "baseRefName": "master",
       "baseRefOid": "1b54eaffda3c8bdf92da9ec5b5e60f7f4f3355ee",
       "headRepository": "cfrg/draft-irtf-cfrg-hpke",
       "headRefName": "caw/psk-lower-limit",
       "headRefOid": "e261914492e1d1a6ec579f4af2c30d9fba4610df",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2020-09-30T23:03:05Z",
+      "mergedAt": "2020-09-30T23:03:05Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "24f7e3111509cd97cb83eef831117cfb370ee228"
+      },
       "comments": [],
       "reviews": [
         {
@@ -12464,6 +12466,46 @@
               "body": "```suggestion\r\n32 bytes but shorter than `Nh` bytes is permitted. A PSK that is longer than\r\n`Nh` bytes or that has more than `Nh` bytes of entropy, respectively, does not\r\nprovide better security than a PSK with `Nh` bytes of entropy: The\r\neffectively used value is `psk_hash`, which has maximum `Nh` bytes of\r\nentropy.\r\n```\r\n\r\nKnowing `psk_hash` is equivalent to knowing `psk`, in this protocol. If we change to\r\n`secret = LabeledExtract(shared_secret, \"secret\", psk)`,\r\nthen we should delete this part (\u201cA PSK that is longer than, \u2026\u201d): the more entropy the psk, the harder the partition oracle attack will become to recover the psk.",
               "createdAt": "2020-09-30T21:58:18Z",
               "updatedAt": "2020-09-30T22:11:33Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk5ODQ5NDU3",
+          "commit": {
+            "abbreviatedOid": "e261914"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-09-30T22:14:03Z",
+          "updatedAt": "2020-09-30T22:14:03Z",
+          "comments": [
+            {
+              "originalPosition": 93,
+              "body": "I don't think this is necessary, so I'll skip this one.",
+              "createdAt": "2020-09-30T22:14:03Z",
+              "updatedAt": "2020-09-30T22:14:03Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk5ODQ5NTYw",
+          "commit": {
+            "abbreviatedOid": "e261914"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2020-09-30T22:14:19Z",
+          "updatedAt": "2020-09-30T22:14:19Z",
+          "comments": [
+            {
+              "originalPosition": 63,
+              "body": "Let's cover that in a separate PR?",
+              "createdAt": "2020-09-30T22:14:19Z",
+              "updatedAt": "2020-09-30T22:14:19Z"
             }
           ]
         }
@@ -12527,6 +12569,111 @@
           "body": "",
           "createdAt": "2020-09-25T14:39:29Z",
           "updatedAt": "2020-09-25T14:39:29Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 162,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDk1ODM3OTg3",
+      "title": "Use shared_secret as salt and psk as ikm in LabeledExtract",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-hpke/pull/162",
+      "state": "MERGED",
+      "author": "blipp",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "**Summary**:\r\n\r\nWhile working on formal composition proofs for HPKE, a problem for applicability of the proofs in a post-quantum setting came up. Here, composition proof means a proof of HPKE assuming some general abstracted KEM.\r\n\r\nThis pull requests proposes a small change to the `KeySchedule` which resolves this proof issue and at the same time simplifies KeySchedule by removing one call to LabeledExtract. After the change, the protocol would be cryptographically cleaner, and also a tiny bit faster, and one line less to implement.\r\n\r\n**Rationale**:\r\n\r\nCurrently, the `KeySchedule` contains the following computation:\r\n\r\n```\r\nsecret = LabeledExtract(psk_hash, \"secret\", shared_secret)\r\n```\r\n\r\nFrequently, HKDF-Extract is modeled as a random oracle. However, we would like to avoid using the random oracle model in the remainder of HPKE (a.k.a. the DEM part/the non-KEM part) and instead use a standard model assumption like PRF. Then, the composition proof will much more likely stay valid in a quantum setting: someone proving once-and-for-all that some PRF is post-quantum secure seems much easier than specifically re-analyzing HPKE in a quantum random oracle model. (papers like [On Quantum Indifferentiability](https://eprint.iacr.org/2018/257.pdf) suggest that quantum random oracles are a real headache.)\r\n\r\nAs a first guess, we would like to model the Extract call as a PRF, with its second parameter `shared_secret` being the key. However, LabeledExtract prefixes `shared_secret` with some labels, let's recall the definition:\r\n\r\n```\r\ndef LabeledExtract(salt, label, ikm):\r\n  labeled_ikm = concat(\"HPKE-05 \", suite_id, label, ikm)\r\n  return Extract(salt, labeled_ikm)\r\n```\r\n\r\nThis means the value that goes into Extract as `labeled_ikm` is not from a uniformly random distribution. Thus, we cannot use a PRF assumption, because there is no uniformly random key. What's left would be a \"seedless extractor\" assumption, which only requires that there is enough entropy in the ikm. Such a seedless extractor is a pretty idealized object and thus morally very close to the random oracle assumption. Actually, the theorems justifying that HMAC is such an extractor usually use a random oracle assumption on an underlying compression function. This is unpleasant because this practically makes the HPKE composition proof rely on a random oracle assumption, which means this proof would not stay valid in a quantum setting.\r\n\r\n**The mitigation**: a mitigation would be to replace these two lines:\r\n\r\n```\r\npsk_hash = LabeledExtract(\"\", \"psk_hash\", psk)\r\nsecret = LabeledExtract(psk_hash, \"secret\", shared_secret)\r\n```\r\n\r\nby\r\n\r\n```\r\nsecret = LabeledExtract(shared_secret, \"secret\", psk)\r\n```\r\n\r\nthat resolves the issue for the proof, because: the first parameter goes directly into Extract's first parameter without prefix, and thus we could use a PRF assumption.\r\n\r\nAdditionally, we get rid of hashing `psk` to `psk_hash`:\r\n- `shared_secret` does not exceed the block size of any of the KDFs specified in the RFC (`shared_secret` is at most 64 bytes long (for SHA512), and the block size of SHA256 is 64 bytes), so we don't need the hashing step to squeeze it below the block size.\r\n- in the second parameter of Extract, there is no length restriction to `psk`\r\n\r\nThis proposed change stays a valid use case of HKDF-Extract: we want to extract the entropy from the psk, and the psk is not necessarily from a uniform distribution (as we do not require that in the draft, and it would maybe too restrictive indeed). Also, HKDF-Extract does allow to use a salt that is secret and random.\r\n\r\nFrom a more global view point: In DHKEM, we already feed the DH shared secret through a random oracle (HKDF) to achieve a uniformly random value on the bitstrings of a fixed length, so it would be cryptographically cleaner to use this property in the following (by keying a PRF with it), instead of requiring a second random oracle.",
+      "createdAt": "2020-09-30T23:12:26Z",
+      "updatedAt": "2020-10-01T16:25:17Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-hpke",
+      "baseRefName": "master",
+      "baseRefOid": "24f7e3111509cd97cb83eef831117cfb370ee228",
+      "headRepository": "blipp/draft-irtf-cfrg-hpke",
+      "headRefName": "blipp_extract",
+      "headRefOid": "d0f6937b6d00726208353564ebd9b2d5cda8ac69",
+      "closedAt": "2020-10-01T16:25:17Z",
+      "mergedAt": "2020-10-01T16:25:17Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "bc851fc335f75f14beab7a58fe6ade9a652d8d4f"
+      },
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> @chris-wood IIRC we had made the change to psk_hash based on some feedback that a fixed length value could be easier to handle for some implementations. Don't know if that's still applicable.\r\n\r\nI *think* that was for the `psk_id` (to avoid dynamically allocating memory for the `concat` call), and the `psk` hash was to ensure that the PSK always had the proper length when passed to `Extract` as a salt. But now it's the `ikm`, which is passed to a `concat` call inside `LabeledExtract`, so we still have to dynamically allocate memory (or at least cap the size of the PSK, which might be reasonable for an implementation to do).\r\n\r\nSince the size of `shared_secret` *should* be fixed length (for all KEMs in this document), one thing we might consider is swapping the order arguments to LabeledExtract, e.g., \r\n\r\n```\r\nsecret = LabeledExtract(psk, \"secret\", shared_secret)\r\n```\r\n\r\ninstead of this\r\n\r\n```\r\nsecret = LabeledExtract(shared_secret, \"secret\", psk)\r\n```",
+          "createdAt": "2020-10-01T14:29:05Z",
+          "updatedAt": "2020-10-01T14:29:05Z"
+        },
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": ">     1. @chris-wood IIRC we had made the change to psk_hash based on some feedback that a fixed length value could be easier to handle for some implementations.  Don't know if that's still applicable.\r\n\r\nExtending on Chris' post on this aspect, he hit send first while I was still typing: From my cryptographic point of view, we introduced psk_hash to ensure that the first parameter of Extract is shorter than the underlying hash function's block size, which is necessary when modeling Extract as a random oracle. If we are no longer modeling _this_ Extract call as random oracle, this requirement is no longer applicable.\r\n\r\nshared_secret, as the new first parameter of Extract, has a fixed length for a fixed KEM; sizes vary between KEMs. I don't know if that's enough for implementations that need fixed length.\r\n\r\nI also recall that the fixed-size requirement was for the parameters of the concat call:\r\n\r\n```\r\nkey_schedule_context = concat(mode, psk_id_hash, info_hash)\r\n```\r\n\r\n\r\nRegarding Chris' proposal of doing\r\n```\r\nsecret = LabeledExtract(psk, \"secret\", shared_secret)\r\n```\r\nso basically just getting rid of the psk_hash: The cryptographic reasoning behind this pull request requires that shared_secret is the first parameter of LabeledExtract, otherwise it does not work. Said differently: We need the uniformly random value to be left as it is without labels. The third parameter of LabeledExtract is prefixed with labels, the first one is left alone. That's why we suggest to put shared_secret in the first parameter. shared_secret is the uniformly random value, psk just has high entropy, but is not uniformly random (and also is not there in all modes, and shared_secret is there in all modes).\r\n\r\n>     2. It's less important, but I wonder if we should revert the `psk_id_hash` and `info_hash` hashes as well.  Basically, those are trading hash invocations for `i2osp` calls and dynamic memory allocation.  (And this may be what the above-referenced review was focused on.)\r\n\r\nJust as a reminder: We are modeling Extract as a random oracle in the KEM, so we still cannot use Hash() directly.\r\n\r\nBut yes, if the fixed-size requirement is for some reason no longer applicable for the implementors who brought this up, then it would be fine for me to use a different injective encoding for the keyschedule_context. (Removed my example of `concat(mode, \"psk_id\", psk_id, \"info\", info)` because it is not injective, psk_id=\"info\", info=\"\" and psk_id=\"\", info=\"info\" result in the same bitstring)",
+          "createdAt": "2020-10-01T14:38:56Z",
+          "updatedAt": "2020-10-01T14:47:01Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@blipp as Richard points out, this PR either requires implementations to do dynamic memory allocation, or to cap their PSK input lengths. My proposal (which I don't like for the reasons you point out) does fix that. So we have to decide whether or not we care about dynamic memory allocation in the key schedule. (My take is that it's reasonable to put a cap on the PSK length, so this isn't really a problem in practice, and we can merge your PR as-is.) @bifurcation, thoughts?",
+          "createdAt": "2020-10-01T16:10:19Z",
+          "updatedAt": "2020-10-01T16:10:19Z"
+        },
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I am confused, I am not sure if I understand right which non-fixed-size parts we are discussing.\r\n\r\nThe current state of the draft is\r\n\r\n```\r\n  psk_hash = LabeledExtract(\"\", \"psk_hash\", psk)\r\n\r\n  secret = LabeledExtract(psk_hash, \"secret\", shared_secret)\r\n```\r\n\r\nand this PR suggests changing to\r\n\r\n```\r\n  secret = LabeledExtract(shared_secret, \"secret\", psk)\r\n```\r\n\r\nIn both cases, the entire psk goes into the third parameter of LabeledExtract. I guess if it was fine before, it should still be fine then? Also, the calls\r\n\r\n```\r\n  psk_id_hash = LabeledExtract(\"\", \"psk_id_hash\", psk_id)\r\n  info_hash = LabeledExtract(\"\", \"info_hash\", info)\r\n```\r\n\r\nallow arbitrary bitstring inputs psk_id and info into the third parameter of LabeledExtract, and it doesn't seem that it was a problem so far.",
+          "createdAt": "2020-10-01T16:19:01Z",
+          "updatedAt": "2020-10-01T16:19:01Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Oh, duh, right, we already lost dynamic memory allocation. So maybe we should just take Richard's suggestion and drop the additional hash for `psk_id` and `info`. ",
+          "createdAt": "2020-10-01T16:21:16Z",
+          "updatedAt": "2020-10-01T16:21:16Z"
+        },
+        {
+          "author": "blipp",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Is it maybe at least helpful for implementations that if we hash psk_id and info, then keyschedule_context is fixed-size, and so the three LabeledExpand calls do not need any dynamic memory allocation?\r\n\r\n```\r\n  key = LabeledExpand(secret, \"key\", key_schedule_context, Nk)\r\n  nonce = LabeledExpand(secret, \"nonce\", key_schedule_context, Nn)\r\n  exporter_secret = LabeledExpand(secret, \"exp\", key_schedule_context, Nh)\r\n```",
+          "createdAt": "2020-10-01T16:22:52Z",
+          "updatedAt": "2020-10-01T16:22:52Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "My point is that we either care about dynamic memory allocation, or we don't. I don't really see much value in making `key_schedule_context` fixed-size if we still require mallocs elsewhere. \r\n\r\nBut that said, let's just address this in a separate PR.",
+          "createdAt": "2020-10-01T16:24:36Z",
+          "updatedAt": "2020-10-01T16:24:36Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NDk5OTQwNzE0",
+          "commit": {
+            "abbreviatedOid": "d0f6937"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Thanks for writing this up, @blipp! This looks good to me. And if it helps analysis, even better.",
+          "createdAt": "2020-10-01T00:32:10Z",
+          "updatedAt": "2020-10-01T00:32:10Z",
+          "comments": []
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTAwMzg2MTQx",
+          "commit": {
+            "abbreviatedOid": "d0f6937"
+          },
+          "author": "bifurcation",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Overall, this looks fine to me.  Just to confirm a few minor points:\r\n\r\n1. @chris-wood IIRC we had made the change to psk_hash based on some feedback that a fixed length value could be easier to handle for some implementations.  Don't know if that's still applicable.\r\n\r\n2. It's less important, but I wonder if we should revert the `psk_id_hash` and `info_hash` hashes as well.  Basically, those are trading hash invocations for `i2osp` calls and dynamic memory allocation.  (And this may be what the above-referenced review was focused on.)",
+          "createdAt": "2020-10-01T14:08:30Z",
+          "updatedAt": "2020-10-01T14:08:30Z",
           "comments": []
         }
       ]
